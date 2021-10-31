@@ -12,7 +12,7 @@ import (
 	"gopkg.in/guregu/null.v3"
 )
 
-func index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
+func Index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), (time.Second * 10))
@@ -103,7 +103,7 @@ func index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
 
 		} else {
 
-			pc := computer.Computer{
+			pc := Computer{
 				Name: record.Name,
 			}
 			pcID, err := computerRepo.Create(ctx, &pc)
@@ -114,7 +114,7 @@ func index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
 				return
 			}
 
-			user := computer.User{
+			user := User{
 				Username:   record.Username,
 				ComputerID: null.IntFrom(pcID),
 			}

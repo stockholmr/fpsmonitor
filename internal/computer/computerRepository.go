@@ -14,7 +14,8 @@ type Computer struct {
 	Created null.String `db:"created" json:"created"`
 	Updated null.String `db:"updated" json:"updated"`
 	Deleted null.String `db:"deleted" json:"deleted"`
-	Name    null.String `db:"name" json:"name"`
+
+	Name null.String `db:"name" json:"name"`
 }
 
 type ComputerRepository interface {
@@ -183,8 +184,6 @@ func (r *computerRepository) Delete(ctx context.Context, id int) error {
 		time.Now().Format("2006-01-02 15:04:05"),
 		id,
 	)
-
-	testing
 
 	if err != nil {
 		tx.Rollback()

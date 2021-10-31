@@ -40,8 +40,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 	userRepo := computer.NewUserRepository(db)
 	networkAdapterRepo := computer.NewNetworkAdapterRepository(db)
 
-	existingRecord := new([]computer.Computer)
-	err = computerRepo.Select(ctx, existingRecord, record.Name.String)
+	existingRecord, err := computerRepo.Select(ctx, record.Name.String)
 	if err != nil {
 		logging.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
