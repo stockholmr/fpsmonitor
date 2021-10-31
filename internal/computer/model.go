@@ -1,8 +1,6 @@
 package computer
 
 import (
-	"fpsmonitor/internal/model"
-
 	"gopkg.in/guregu/null.v3"
 )
 
@@ -18,7 +16,10 @@ type NetworkAdapter struct {
 }
 
 type Computer struct {
-	model.Model
+	ID      null.Int    `db:"id" json:"id"`
+	Created null.String `db:"created" json:"created"`
+	Updated null.String `db:"updated" json:"updated"`
+	Deleted null.String `db:"deleted" json:"deleted"`
 
 	Name null.String `db:"name" json:"name"`
 }

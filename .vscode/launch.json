@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "cwd": "${workspaceFolder}/cmd/server",
-            "program": "${workspaceFolder}/cmd/server/fpsserver.go"
+            "program": "${workspaceFolder}/cmd/server"
         }
     ]
 }
