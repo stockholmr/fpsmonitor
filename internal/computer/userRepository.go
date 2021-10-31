@@ -49,7 +49,7 @@ func (r *userRepository) Install(ctx context.Context) error {
             "updated" TEXT,
             "deleted" TEXT,
             "computer_id" INTEGER,
-			"username" TEXT,
+			"username" TEXT
             PRIMARY KEY("id" AUTOINCREMENT)
         )`,
 	)

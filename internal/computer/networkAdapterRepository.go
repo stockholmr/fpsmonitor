@@ -6,14 +6,28 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"gopkg.in/guregu/null.v3"
 )
 
+type NetworkAdapter struct {
+	ID      null.Int    `db:"id" json:"id"`
+	Created null.String `db:"created" json:"created"`
+	Updated null.String `db:"updated" json:"updated"`
+	Deleted null.String `db:"deleted" json:"deleted"`
+
+	ComputerID null.Int    `db:"computer_id" json:"-"`
+	Name       null.String `db:"name" json:"name"`
+	MacAddress null.String `db:"mac_address" json:"mac_address"`
+	IPAddress  null.String `db:"ip_address" json:"ip_address"`
+}
+
 type NetworkAdapterRepository interface {
-	Install(ctx context.Context) error
-	Get(ctx context.Context, computerID int) (*[]NetworkAdapter, error)
-	Create(ctx context.Context, data *NetworkAdapter) (int64, error)
-	Update(ctx context.Context, data *NetworkAdapter) error
-	Delete(ctx context.Context, ID int) error
+	Install(context.Context) error
+	Select(context.Context, int) (*NetworkAdapter, error)
+	Create(context.Context, *NetworkAdapter) (int64, error)
+	Update(context.Context, *NetworkAdapter) error
+	Delete(context.Context, int) error
+	List(context.Context, int, int) (*[]NetworkAdapter, error)
 }
 
 type networkAdapterRepository struct {
@@ -26,18 +40,18 @@ func NewNetworkAdapterRepository(db *sqlx.DB) NetworkAdapterRepository {
 	}
 }
 
-func (n *networkAdapterRepository) Install(ctx context.Context) error {
-	_, err := n.db.ExecContext(
+func (r *networkAdapterRepository) Install(ctx context.Context) error {
+	_, err := r.db.ExecContext(
 		ctx,
-		`CREATE TABLE "computer_network_adapters" (
+		`CREATE TABLE computer_network_adapters (
             "id" INTEGER,
+            "created" TEXT,
+            "updated" TEXT,
+            "deleted" TEXT,
             "computer_id" INTEGER,
 			"name" TEXT,
             "mac_address" TEXT,
 			"ip_address" TEXT,
-            "created" TEXT,
-			"updated" TEXT,
-			"deleted" TEXT,
             PRIMARY KEY("id" AUTOINCREMENT)
         )`,
 	)
@@ -48,31 +62,31 @@ func (n *networkAdapterRepository) Install(ctx context.Context) error {
 	return nil
 }
 
-func (n *networkAdapterRepository) Get(ctx context.Context, computerID int) (*[]NetworkAdapter, error) {
-	data := []NetworkAdapter{}
+func (r *networkAdapterRepository) Select(ctx context.Context, id int) (*NetworkAdapter, error) {
+	data := NetworkAdapter{}
 
-	stmt, err := n.db.PreparexContext(
+	stmt, err := r.db.PreparexContext(
 		ctx,
 		`SELECT 
             id,
+            created,
+            updated,
+            deleted,
             name,
 			mac_address,
-            ip_address,
-            created,
-			updated,
-			deleted
-        FROM computer_network_adapters 
-        WHERE computer_id=?`,
+            ip_address
+        FROM computer_network_adapters
+        WHERE id=?`,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = stmt.SelectContext(
+	err = stmt.GetContext(
 		ctx,
 		&data,
-		computerID,
+		id,
 	)
 
 	if err != nil {
@@ -85,8 +99,8 @@ func (n *networkAdapterRepository) Get(ctx context.Context, computerID int) (*[]
 	return &data, nil
 }
 
-func (n *networkAdapterRepository) Create(ctx context.Context, data *NetworkAdapter) (int64, error) {
-	tx, err := n.db.BeginTxx(ctx, nil)
+func (r *networkAdapterRepository) Create(ctx context.Context, data *NetworkAdapter) (int64, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
 
 	if err != nil {
 		return -1, err
@@ -94,12 +108,12 @@ func (n *networkAdapterRepository) Create(ctx context.Context, data *NetworkAdap
 
 	stmt, err := tx.PreparexContext(
 		ctx,
-		`INSERT INTO computer_network_adapters(
-			computer_id,
+		`INSERT INTO computer_network_adapters (
+            created,
+            computer_id,
             name,
 			mac_address,
-            ip_address,
-			created
+            ip_address
         ) VALUES (?,?,?,?,?)`,
 	)
 
@@ -109,11 +123,11 @@ func (n *networkAdapterRepository) Create(ctx context.Context, data *NetworkAdap
 
 	result, err := stmt.ExecContext(
 		ctx,
+		time.Now().Format("2006-01-02 15:04:05"),
 		data.ComputerID,
 		data.Name,
 		data.MacAddress,
 		data.IPAddress,
-		time.Now().Format("2006-01-02 15:04:05"),
 	)
 
 	if err != nil {
@@ -126,8 +140,8 @@ func (n *networkAdapterRepository) Create(ctx context.Context, data *NetworkAdap
 	return id, nil
 }
 
-func (n *networkAdapterRepository) Update(ctx context.Context, data *NetworkAdapter) error {
-	tx, err := n.db.BeginTxx(ctx, nil)
+func (r *networkAdapterRepository) Update(ctx context.Context, data *NetworkAdapter) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
 
 	if err != nil {
 		return err
@@ -136,9 +150,9 @@ func (n *networkAdapterRepository) Update(ctx context.Context, data *NetworkAdap
 	stmt, err := tx.PreparexContext(
 		ctx,
 		`UPDATE computer_network_adapters SET
+            updated=?,
             name=?,
-            ip_address=?,
-			updated=?
+            ip_address=?
         WHERE id=?`,
 	)
 
@@ -148,9 +162,9 @@ func (n *networkAdapterRepository) Update(ctx context.Context, data *NetworkAdap
 
 	_, err = stmt.ExecContext(
 		ctx,
+		time.Now().Format("2006-01-02 15:04:05"),
 		data.Name,
 		data.IPAddress,
-		time.Now().Format("2006-01-02 15:04:05"),
 		data.ID,
 	)
 
@@ -163,8 +177,8 @@ func (n *networkAdapterRepository) Update(ctx context.Context, data *NetworkAdap
 	return nil
 }
 
-func (n *networkAdapterRepository) Delete(ctx context.Context, ID int) error {
-	tx, err := n.db.BeginTxx(ctx, nil)
+func (r *networkAdapterRepository) Delete(ctx context.Context, id int) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
 
 	if err != nil {
 		return err
@@ -173,7 +187,7 @@ func (n *networkAdapterRepository) Delete(ctx context.Context, ID int) error {
 	stmt, err := tx.PreparexContext(
 		ctx,
 		`UPDATE computer_network_adapters SET
-			deleted=?
+            deleted=?
         WHERE id=?`,
 	)
 
@@ -184,7 +198,7 @@ func (n *networkAdapterRepository) Delete(ctx context.Context, ID int) error {
 	_, err = stmt.ExecContext(
 		ctx,
 		time.Now().Format("2006-01-02 15:04:05"),
-		ID,
+		id,
 	)
 
 	if err != nil {
@@ -194,4 +208,41 @@ func (n *networkAdapterRepository) Delete(ctx context.Context, ID int) error {
 
 	tx.Commit()
 	return nil
+}
+
+func (r *networkAdapterRepository) List(ctx context.Context, start int, count int) (*[]NetworkAdapter, error) {
+	data := []NetworkAdapter{}
+
+	stmt, err := r.db.PreparexContext(
+		ctx,
+		`SELECT
+            id,
+            created,
+            updated,
+            deleted,
+            name,
+            mac_address,
+            ip_address
+        FROM computer_network_adapters
+        LIMIT ?, ?`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = stmt.SelectContext(
+		ctx,
+		start,
+		count,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &data, nil
 }
