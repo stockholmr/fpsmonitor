@@ -24,7 +24,7 @@ type UserRepository interface {
 	Create(context.Context, *User) (int64, error)
 	Update(context.Context, *User) error
 	Delete(context.Context, int) error
-	List(context.Context, int, int) (*[]User, error)
+	List(context.Context, int, int) ([]User, error)
 
 	SelectWithUsername(context.Context, string) (*User, error)
 	SelectWithUsernameAndComputerID(context.Context, int, string) (*User, error)
@@ -48,7 +48,7 @@ func (r *userRepository) Install(ctx context.Context) error {
             "created" TEXT,
             "updated" TEXT,
             "deleted" TEXT,
-            "computer_id" INTEGER,
+            "computer_id" INTEGER NOT NULL,
 			"username" TEXT,
 			FOREIGN KEY("computer_id") REFERENCES "computers"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
             PRIMARY KEY("id" AUTOINCREMENT)
@@ -157,6 +157,7 @@ func (r *userRepository) SelectWithUsernameAndComputerID(ctx context.Context, id
 		ctx,
 		&data,
 		id,
+		username,
 	)
 
 	if err != nil {
@@ -216,7 +217,8 @@ func (r *userRepository) Update(ctx context.Context, data *User) error {
 	stmt, err := tx.PreparexContext(
 		ctx,
 		`UPDATE computer_users SET
-            updated=?
+            updated=?,
+			username=?
         WHERE id=?`,
 	)
 
@@ -227,6 +229,8 @@ func (r *userRepository) Update(ctx context.Context, data *User) error {
 	_, err = stmt.ExecContext(
 		ctx,
 		time.Now().Format("2006-01-02 15:04:05"),
+		data.Username,
+		data.ID,
 	)
 
 	if err != nil {
@@ -271,7 +275,7 @@ func (r *userRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *userRepository) List(ctx context.Context, start int, count int) (*[]User, error) {
+func (r *userRepository) List(ctx context.Context, start int, count int) ([]User, error) {
 	data := []User{}
 
 	stmt, err := r.db.PreparexContext(
@@ -293,6 +297,7 @@ func (r *userRepository) List(ctx context.Context, start int, count int) (*[]Use
 
 	err = stmt.SelectContext(
 		ctx,
+		&data,
 		start,
 		count,
 	)
@@ -304,5 +309,5 @@ func (r *userRepository) List(ctx context.Context, start int, count int) (*[]Use
 		return nil, err
 	}
 
-	return &data, nil
+	return data, nil
 }

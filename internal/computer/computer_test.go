@@ -45,7 +45,7 @@ func equals(tb testing.TB, exp, act interface{}) {
 	}
 }
 
-func DBSetup() (*sqlx.DB, error) {
+func dbSetup() (*sqlx.DB, error) {
 	db, err := sqlx.Open("sqlite3", ":memory:")
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func DBSetup() (*sqlx.DB, error) {
 }
 
 func TestComputerRepositoryInstall(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -76,7 +76,7 @@ func TestComputerRepositoryInstall(t *testing.T) {
 }
 
 func TestComputerRepositoryCreate(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -95,7 +95,7 @@ func TestComputerRepositoryCreate(t *testing.T) {
 }
 
 func TestComputerRepositorySelect(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -118,7 +118,7 @@ func TestComputerRepositorySelect(t *testing.T) {
 }
 
 func TestComputerRepositoryUpdate(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -149,7 +149,7 @@ func TestComputerRepositoryUpdate(t *testing.T) {
 }
 
 func TestComputerRepositoryDelete(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -166,16 +166,16 @@ func TestComputerRepositoryDelete(t *testing.T) {
 		ok(t, err)
 	}
 
-	err = repo.Delete(dbCtx, 3)
+	err = repo.Delete(dbCtx, 4)
 	ok(t, err)
 
 	comp, err := repo.Select(dbCtx, "Test Computer 3")
 	ok(t, err)
-	equals(t, false, comp.Deleted.Valid)
+	equals(t, true, comp.Deleted.Valid)
 }
 
 func TestComputerRepositoryList(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -201,7 +201,7 @@ func TestComputerRepositoryList(t *testing.T) {
 }
 
 func TestNetworkAdapterRepositoryInstall(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -222,7 +222,7 @@ func TestNetworkAdapterRepositoryInstall(t *testing.T) {
 }
 
 func TestNetworkAdapterRepositoryCreate(t *testing.T) {
-	db, err := DBSetup()
+	db, err := dbSetup()
 	ok(t, err)
 	defer db.Close()
 
@@ -231,6 +231,7 @@ func TestNetworkAdapterRepositoryCreate(t *testing.T) {
 	ok(t, err)
 
 	na := &NetworkAdapter{
+		ComputerID: null.IntFrom(1),
 		Name:       null.NewString("Local Network", true),
 		MacAddress: null.NewString("00:00:00:00:00", true),
 		IPAddress:  null.NewString("192.168.1.1", true),
@@ -241,3 +242,321 @@ func TestNetworkAdapterRepositoryCreate(t *testing.T) {
 
 	equals(t, int64(1), id)
 }
+
+func TestNetworkAdapterRepositorySelect(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewNetworkAdapterRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		na := &NetworkAdapter{
+			ComputerID: null.IntFrom(1),
+			Name:       null.NewString(fmt.Sprintf("Network %d", i), true),
+			MacAddress: null.NewString("00:00:00:00:00", true),
+			IPAddress:  null.NewString("192.168.1.1", true),
+		}
+
+		_, err := repo.Create(dbCtx, na)
+		ok(t, err)
+	}
+
+	comp, err := repo.Select(dbCtx, 4)
+	ok(t, err)
+	equals(t, "Network 3", comp.Name.String)
+}
+
+func TestNetworkAdapterRepositoryUpdate(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewNetworkAdapterRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		na := &NetworkAdapter{
+			ComputerID: null.IntFrom(1),
+			Name:       null.NewString(fmt.Sprintf("Network %d", i), true),
+			MacAddress: null.NewString("00:00:00:00:00", true),
+			IPAddress:  null.NewString("192.168.1.1", true),
+		}
+
+		_, err := repo.Create(dbCtx, na)
+		ok(t, err)
+	}
+
+	na := &NetworkAdapter{
+		ID:   null.IntFrom(4),
+		Name: null.NewString("Network 33", true),
+	}
+
+	err = repo.Update(dbCtx, na)
+	ok(t, err)
+
+	comp, err := repo.Select(dbCtx, 4)
+	ok(t, err)
+	equals(t, "Network 33", comp.Name.String)
+}
+
+func TestNetworkAdapterRepositoryDelete(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewNetworkAdapterRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		na := &NetworkAdapter{
+			ComputerID: null.IntFrom(1),
+			Name:       null.NewString(fmt.Sprintf("Network %d", i), true),
+			MacAddress: null.NewString("00:00:00:00:00", true),
+			IPAddress:  null.NewString("192.168.1.1", true),
+		}
+
+		_, err := repo.Create(dbCtx, na)
+		ok(t, err)
+	}
+
+	err = repo.Delete(dbCtx, 4)
+	ok(t, err)
+
+	comp, err := repo.Select(dbCtx, 4)
+	ok(t, err)
+	equals(t, true, comp.Deleted.Valid)
+}
+
+func TestNetworkAdapterRepositoryList(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewNetworkAdapterRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		na := &NetworkAdapter{
+			ComputerID: null.IntFrom(1),
+			Name:       null.NewString(fmt.Sprintf("Network %d", i), true),
+			MacAddress: null.NewString("00:00:00:00:00", true),
+			IPAddress:  null.NewString("192.168.1.1", true),
+		}
+
+		_, err := repo.Create(dbCtx, na)
+		ok(t, err)
+	}
+
+	nas, err := repo.List(dbCtx, 1, 2)
+	ok(t, err)
+
+	equals(t, 2, len(nas))
+	equals(t, int64(2), nas[0].ID.Int64)
+	equals(t, int64(3), nas[1].ID.Int64)
+}
+
+func TestUserRepositoryInstall(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	var data null.String
+	row := db.QueryRowContext(dbCtx, "SELECT sql FROM sqlite_master WHERE name='computer_users'")
+	err = row.Scan(&data)
+	ok(t, err)
+
+	schemaPattern := `CREATE TABLE computer_users`
+
+	matched, err := regexp.MatchString(schemaPattern, data.String)
+	ok(t, err)
+	assert(t, matched, "invalid table schema", nil)
+}
+
+func TestUserRepositoryCreate(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	user := &User{
+		ComputerID: null.IntFrom(1),
+		Username:   null.StringFrom("Test"),
+	}
+
+	id, err := repo.Create(dbCtx, user)
+	ok(t, err)
+
+	equals(t, int64(1), id)
+}
+
+func TestUserRepositorySelect(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		user := &User{
+			ComputerID: null.IntFrom(int64(i)),
+			Username:   null.StringFrom(fmt.Sprintf("Test User %d", i)),
+		}
+
+		_, err := repo.Create(dbCtx, user)
+		ok(t, err)
+	}
+
+	comp, err := repo.Select(dbCtx, 4)
+	ok(t, err)
+	equals(t, "Test User 3", comp.Username.String)
+}
+
+func TestUserRepositorySelectWithUsername(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		user := &User{
+			ComputerID: null.IntFrom(int64(i)),
+			Username:   null.StringFrom(fmt.Sprintf("Test User %d", i)),
+		}
+
+		_, err := repo.Create(dbCtx, user)
+		ok(t, err)
+	}
+
+	comp, err := repo.SelectWithUsername(dbCtx, "Test User 3")
+	ok(t, err)
+	equals(t, int64(4), comp.ID.Int64)
+}
+
+func TestUserRepositorySelectWithUsernameAndComputerID(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		user := &User{
+			ComputerID: null.IntFrom(int64(i)),
+			Username:   null.StringFrom(fmt.Sprintf("Test User %d", i)),
+		}
+
+		_, err := repo.Create(dbCtx, user)
+		ok(t, err)
+	}
+
+	comp, err := repo.SelectWithUsernameAndComputerID(dbCtx, 4, "Test User 4")
+	ok(t, err)
+	equals(t, int64(5), comp.ID.Int64)
+}
+
+func TestUserRepositoryUpdate(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		user := &User{
+			ComputerID: null.IntFrom(int64(i)),
+			Username:   null.StringFrom(fmt.Sprintf("Test User %d", i)),
+		}
+
+		_, err := repo.Create(dbCtx, user)
+		ok(t, err)
+	}
+
+	user := &User{
+		ID:       null.IntFrom(3),
+		Username: null.NewString("Test User 33", true),
+	}
+
+	err = repo.Update(dbCtx, user)
+	ok(t, err)
+
+	comp, err := repo.SelectWithUsername(dbCtx, "Test User 33")
+	ok(t, err)
+	equals(t, "Test User 33", comp.Username.String)
+}
+
+func TestUserRepositoryDelete(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		user := &User{
+			ComputerID: null.IntFrom(int64(i)),
+			Username:   null.StringFrom(fmt.Sprintf("Test User %d", i)),
+		}
+
+		_, err := repo.Create(dbCtx, user)
+		ok(t, err)
+	}
+
+	err = repo.Delete(dbCtx, 4)
+	ok(t, err)
+
+	comp, err := repo.SelectWithUsername(dbCtx, "Test User 3")
+	ok(t, err)
+	equals(t, true, comp.Deleted.Valid)
+}
+
+func TestUserRepositoryList(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewUserRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	for i := 0; i < 10; i++ {
+		user := &User{
+			ComputerID: null.IntFrom(int64(i)),
+			Username:   null.StringFrom(fmt.Sprintf("Test User %d", i)),
+		}
+
+		_, err := repo.Create(dbCtx, user)
+		ok(t, err)
+	}
+
+	users, err := repo.List(dbCtx, 1, 2)
+	ok(t, err)
+
+	equals(t, 2, len(users))
+	equals(t, int64(2), users[0].ID.Int64)
+	equals(t, int64(3), users[1].ID.Int64)
+}
+

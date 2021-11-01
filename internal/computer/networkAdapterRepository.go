@@ -27,7 +27,7 @@ type NetworkAdapterRepository interface {
 	Create(context.Context, *NetworkAdapter) (int64, error)
 	Update(context.Context, *NetworkAdapter) error
 	Delete(context.Context, int) error
-	List(context.Context, int, int) (*[]NetworkAdapter, error)
+	List(context.Context, int, int) ([]NetworkAdapter, error)
 }
 
 type networkAdapterRepository struct {
@@ -211,7 +211,7 @@ func (r *networkAdapterRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *networkAdapterRepository) List(ctx context.Context, start int, count int) (*[]NetworkAdapter, error) {
+func (r *networkAdapterRepository) List(ctx context.Context, start int, count int) ([]NetworkAdapter, error) {
 	data := []NetworkAdapter{}
 
 	stmt, err := r.db.PreparexContext(
@@ -234,6 +234,7 @@ func (r *networkAdapterRepository) List(ctx context.Context, start int, count in
 
 	err = stmt.SelectContext(
 		ctx,
+		&data,
 		start,
 		count,
 	)
@@ -245,5 +246,5 @@ func (r *networkAdapterRepository) List(ctx context.Context, start int, count in
 		return nil, err
 	}
 
-	return &data, nil
+	return data, nil
 }
