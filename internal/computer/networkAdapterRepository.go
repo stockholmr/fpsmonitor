@@ -48,10 +48,11 @@ func (r *networkAdapterRepository) Install(ctx context.Context) error {
             "created" TEXT,
             "updated" TEXT,
             "deleted" TEXT,
-            "computer_id" INTEGER,
+            "computer_id" INTEGER NOT NULL,
 			"name" TEXT,
             "mac_address" TEXT,
 			"ip_address" TEXT,
+			FOREIGN KEY("computer_id") REFERENCES "computers"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
             PRIMARY KEY("id" AUTOINCREMENT)
         )`,
 	)

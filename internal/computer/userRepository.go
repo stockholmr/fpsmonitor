@@ -49,7 +49,8 @@ func (r *userRepository) Install(ctx context.Context) error {
             "updated" TEXT,
             "deleted" TEXT,
             "computer_id" INTEGER,
-			"username" TEXT
+			"username" TEXT,
+			FOREIGN KEY("computer_id") REFERENCES "computers"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
             PRIMARY KEY("id" AUTOINCREMENT)
         )`,
 	)
