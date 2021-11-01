@@ -151,3 +151,9 @@ func Index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func Editor(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+	}
+}
