@@ -24,6 +24,7 @@ type NetworkAdapter struct {
 type NetworkAdapterRepository interface {
 	Install(context.Context) error
 	Select(context.Context, int) (*NetworkAdapter, error)
+	SelectWithComputerID(context.Context, int) ([]NetworkAdapter, error)
 	Create(context.Context, *NetworkAdapter) (int64, error)
 	Update(context.Context, *NetworkAdapter) error
 	Delete(context.Context, int) error
@@ -73,6 +74,7 @@ func (r *networkAdapterRepository) Select(ctx context.Context, id int) (*Network
             created,
             updated,
             deleted,
+			computer_id,
             name,
 			mac_address,
             ip_address
@@ -98,6 +100,44 @@ func (r *networkAdapterRepository) Select(ctx context.Context, id int) (*Network
 	}
 
 	return &data, nil
+}
+
+func (r *networkAdapterRepository) SelectWithComputerID(ctx context.Context, id int) ([]NetworkAdapter, error) {
+	data := []NetworkAdapter{}
+
+	stmt, err := r.db.PreparexContext(
+		ctx,
+		`SELECT 
+            id,
+            created,
+            updated,
+            deleted,
+			computer_id,
+            name,
+			mac_address,
+            ip_address
+        FROM computer_network_adapters
+        WHERE computer_id=?`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = stmt.SelectContext(
+		ctx,
+		&data,
+		id,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (r *networkAdapterRepository) Create(ctx context.Context, data *NetworkAdapter) (int64, error) {

@@ -361,6 +361,21 @@ func TestNetworkAdapterRepositoryList(t *testing.T) {
 	equals(t, int64(3), nas[1].ID.Int64)
 }
 
+func TestNetworkAdapterRepositoryListNoRows(t *testing.T) {
+	db, err := dbSetup()
+	ok(t, err)
+	defer db.Close()
+
+	repo := NewNetworkAdapterRepository(db)
+	err = repo.Install(dbCtx)
+	ok(t, err)
+
+	nas, err := repo.List(dbCtx, 1, 2)
+	ok(t, err)
+
+	equals(t, 0, len(nas))
+}
+
 func TestUserRepositoryInstall(t *testing.T) {
 	db, err := dbSetup()
 	ok(t, err)
@@ -559,4 +574,3 @@ func TestUserRepositoryList(t *testing.T) {
 	equals(t, int64(2), users[0].ID.Int64)
 	equals(t, int64(3), users[1].ID.Int64)
 }
-

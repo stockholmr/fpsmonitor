@@ -83,7 +83,7 @@ func main() {
 
 	router = mux.NewRouter().StrictSlash(true)
 
-	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(index)).Methods("POST")
+	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
 
 	// = Init HTTP Server =========================================================================
 
