@@ -152,7 +152,6 @@ func Index(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-/*
 func List(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -167,4 +166,3 @@ func List(db *sqlx.DB) http.HandlerFunc {
 		editorPage().ExecuteTemplate(w, "page", &compList)
 	}
 }
-*/
