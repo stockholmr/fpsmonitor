@@ -9,6 +9,9 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.9
 	gopkg.in/guregu/null.v3 v3.5.0
+	gopkg.in/ini.v1 v1.63.2
 )
+
+require github.com/stretchr/testify v1.7.0 // indirect
 
 replace fpsmonitor => ./

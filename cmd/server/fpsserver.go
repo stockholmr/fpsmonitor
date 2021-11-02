@@ -14,15 +14,36 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/justinas/alice"
 	_ "github.com/mattn/go-sqlite3"
+	ini "gopkg.in/ini.v1"
 )
 
 var (
-	listen = ""
-	port   = "8080"
-	router *mux.Router
-	newDB  = false
-	dbFile = "fpsmonitor.sqlite"
-	db     *sqlx.DB
+	Server = struct {
+		ListenAddress string `ini:"Listen"`
+		Port          string `ini:"Port"`
+	}{
+		ListenAddress: "",
+		Port:          "8080",
+	}
+
+	Database = struct {
+		File    string `ini:"File"`
+		Install bool   `ini:"-"`
+	}{
+		File:    "fpsmonitor.sqlite",
+		Install: false,
+	}
+
+	Logging = struct {
+		File string `ini:"File"`
+	}{
+		File: "fpsmonitor.log",
+	}
+
+	configFile = "fpsmonitor.ini"
+	router     *mux.Router
+	db         *sqlx.DB
+	cfg        *ini.File
 )
 
 func LoggingMiddleware(next http.Handler) http.Handler {
@@ -34,36 +55,59 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 func main() {
 
+	_, err := os.Stat(configFile)
+	if err != nil {
+		if !os.IsExist(err) {
+			cfg = ini.Empty()
+			secServer, _ := cfg.NewSection("Server")
+			secServer.ReflectFrom(&Server)
+			secDatabase, _ := cfg.NewSection("Database")
+			secDatabase.ReflectFrom(&Database)
+			secLogging, _ := cfg.NewSection("Logging")
+			secLogging.ReflectFrom(&Logging)
+			cfg.SaveTo(configFile)
+		}
+	}
+
+	cfg, err = ini.Load(configFile)
+	if err != nil {
+		logging.Fatal("failed to load config")
+	}
+
+	cfg.Section("Server").MapTo(&Server)
+	cfg.Section("Database").MapTo(&Database)
+	cfg.Section("Logging").MapTo(&Logging)
+
 	// = Init Logger =========================================================================
 
-	if err := logging.Init("fpsmonitor.log", logging.TRACE, logging.DEBUG); err != nil {
+	if err := logging.Init(Logging.File, logging.TRACE, logging.DEBUG); err != nil {
 		logging.Debug(err)
 	}
 
 	// = Init Datebase Connection =========================================================================
 
-	dbDir := path.Dir(dbFile)
-	err := os.Mkdir(dbDir, 0776)
+	dbDir := path.Dir(Database.File)
+	err = os.Mkdir(dbDir, 0776)
 	if err != nil {
 		if !os.IsExist(err) {
 			logging.Fatalf("database failed: %s", err)
 		}
 	}
 
-	if _, err := os.Stat(dbFile); err != nil {
+	if _, err := os.Stat(Database.File); err != nil {
 		if !os.IsExist(err) {
-			newDB = true
+			Database.Install = true
 		}
 	}
 
-	db, err = sqlx.Open("sqlite3", dbFile)
+	db, err = sqlx.Open("sqlite3", Database.File)
 	if err != nil {
 		logging.Fatalf("database failed: %s", err)
 	}
 
 	dbCtx := context.Background()
 
-	if newDB {
+	if Database.Install {
 		if err = computer.NewComputerRepository(db).Install(dbCtx); err != nil {
 			logging.Fatalf("database failed: %s", err)
 		}
@@ -84,11 +128,12 @@ func main() {
 	router = mux.NewRouter().StrictSlash(true)
 
 	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
+	//router.Handle("/computers/admin", alice.New(LoggingMiddleware).ThenFunc(computer.Admin(db))).Methods("GET", "POST")
 
 	// = Init HTTP Server =========================================================================
 
 	server := http.Server{
-		Addr:           listen + ":" + port,
+		Addr:           Server.ListenAddress + ":" + Server.Port,
 		Handler:        router,
 		WriteTimeout:   15 * time.Second,
 		ReadTimeout:    15 * time.Second,
@@ -96,7 +141,7 @@ func main() {
 	}
 
 	go func() {
-		logging.Debugf("server started listening on address: %s port: %s", listen, port)
+		logging.Debugf("server started listening on address: %s port: %s", Server.ListenAddress, Server.Port)
 		err := server.ListenAndServe()
 		if err != nil {
 			logging.Fatalf("server failed: %s", err)

@@ -12,7 +12,7 @@ import (
 	"gopkg.in/guregu/null.v3"
 )
 
-func Index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
+func Index(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), (time.Second * 10))
@@ -152,8 +152,19 @@ func Index(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func Editor(db *sqlx.DB) func(http.ResponseWriter, *http.Request) {
+/*
+func List(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		computerRepo := NewComputerRepository(db)
+		compList, err := computerRepo.List(r.Context(), 0, 20)
+		if err != nil {
+			logging.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		editorPage().ExecuteTemplate(w, "page", &compList)
 	}
 }
+*/
