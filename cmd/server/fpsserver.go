@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fpsmonitor/internal/assets"
 	"fpsmonitor/internal/computer"
 	"fpsmonitor/internal/logging"
 	"net/http"
@@ -127,8 +128,12 @@ func main() {
 
 	router = mux.NewRouter().StrictSlash(true)
 
+	router.Handle("/bootstrap", assets.Bootstrap()).Methods("GET")
+	router.Handle("/jquery", assets.Jquery()).Methods("GET")
+
 	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
-	//router.Handle("/computers/admin", alice.New(LoggingMiddleware).ThenFunc(computer.Admin(db))).Methods("GET", "POST")
+
+	router.Handle("/computers/admin", alice.New(LoggingMiddleware).ThenFunc(computer.List(db))).Methods("GET", "POST")
 
 	// = Init HTTP Server =========================================================================
 

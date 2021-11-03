@@ -195,18 +195,13 @@ func (r *computerRepository) Delete(ctx context.Context, id int) error {
 }
 
 func (r *computerRepository) List(ctx context.Context, start int, count int) ([]Computer, error) {
-	data := []Computer{}
+	data := make([]Computer, 0)
 
 	stmt, err := r.db.PreparexContext(
 		ctx,
-		`SELECT
-            id,
-            created,
-            updated,
-            deleted,
-            name
+		`SELECT *
         FROM computers
-        LIMIT ?, ?`,
+		LIMIT ? OFFSET ?`,
 	)
 
 	if err != nil {
@@ -216,8 +211,8 @@ func (r *computerRepository) List(ctx context.Context, start int, count int) ([]
 	err = stmt.SelectContext(
 		ctx,
 		&data,
-		start,
 		count,
+		start,
 	)
 
 	if err != nil {

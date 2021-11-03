@@ -163,6 +163,14 @@ func List(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		editorPage().ExecuteTemplate(w, "page", &compList)
+		data := struct {
+			Title     string
+			Computers []Computer
+		}{
+			Title:     "Computer List",
+			Computers: compList,
+		}
+
+		editorPage().ExecuteTemplate(w, "page", &data)
 	}
 }
