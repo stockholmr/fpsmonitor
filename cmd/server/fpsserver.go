@@ -130,9 +130,11 @@ func main() {
 
 	router.Handle("/bootstrap", assets.Bootstrap()).Methods("GET")
 	router.Handle("/jquery", assets.Jquery()).Methods("GET")
+	router.Handle("/axios", assets.Axios()).Methods("GET")
 
 	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
 
+	router.Handle("/computers/stylesheet", computer.Stylesheet()).Methods("GET")
 	router.Handle("/computers/admin", alice.New(LoggingMiddleware).ThenFunc(computer.List(db))).Methods("GET", "POST")
 
 	// = Init HTTP Server =========================================================================

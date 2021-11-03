@@ -3,6 +3,7 @@ package computer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"fpsmonitor/internal/logging"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,14 @@ import (
 	"github.com/jmoiron/sqlx"
 	"gopkg.in/guregu/null.v3"
 )
+
+func Stylesheet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(stylesheet())))
+		w.Write(stylesheet())
+	}
+}
 
 func Index(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

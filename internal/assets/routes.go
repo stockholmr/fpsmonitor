@@ -5,6 +5,14 @@ import (
 	"net/http"
 )
 
+func Axios() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(axios())))
+		w.Write(axios())
+	}
+}
+
 func Bootstrap() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
@@ -15,7 +23,7 @@ func Bootstrap() http.HandlerFunc {
 
 func Jquery() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/text/javascript; charset=utf-8")
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(jquery())))
 		w.Write(jquery())
 	}

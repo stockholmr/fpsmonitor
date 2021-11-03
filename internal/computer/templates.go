@@ -13,7 +13,7 @@ func editorPage() *template.Template {
 				<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 				<title><<.Title>></title>
                 <link rel="stylesheet" href="/bootstrap" type="text/css" />
-				<link rel="stylesheet" href="/public/css/styles.css" type="text/css" />
+				<link rel="stylesheet" href="/computers/stylesheet" type="text/css" />
 			</head>
 
 			<body>
