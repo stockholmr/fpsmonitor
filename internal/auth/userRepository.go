@@ -22,11 +22,12 @@ type User struct {
 
 type UserRepository interface {
 	Install(context.Context) error
-	Select(context.Context, string) (*User, error)
+	Select(context.Context, int) (*User, error)
+	SelectWithUsername(context.Context, string) (*User, error)
 	Create(context.Context, *User) (int64, error)
 	Update(context.Context, *User) error
 	Delete(context.Context, int) error
-	List(context.Context, int, int) (*[]User, error)
+	List(context.Context, int, int) ([]User, error)
 }
 
 type userRepository struct {
@@ -63,7 +64,43 @@ func (r *userRepository) Install(ctx context.Context) error {
 	return nil
 }
 
-func (r *userRepository) Select(ctx context.Context, username string) (*User, error) {
+func (r *userRepository) Select(ctx context.Context, id int) (*User, error) {
+	data := User{}
+
+	stmt, err := r.db.PreparexContext(
+		ctx,
+		`SELECT *
+        FROM users
+        WHERE id=?`,
+	)
+
+	if err != nil {
+		return nil, &ErrorEx{
+			ErrorMsg: err,
+			Func:     "auth.userRepository.Select() --> DB.PreparexContext",
+		}
+	}
+
+	err = stmt.GetContext(
+		ctx,
+		&data,
+		id,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, &ErrorEx{
+			ErrorMsg: err,
+			Func:     "auth.userRepository.Select() --> DB.GetContext",
+		}
+	}
+
+	return &data, nil
+}
+
+func (r *userRepository) SelectWithUsername(ctx context.Context, username string) (*User, error) {
 	data := User{}
 
 	stmt, err := r.db.PreparexContext(
@@ -76,7 +113,7 @@ func (r *userRepository) Select(ctx context.Context, username string) (*User, er
 	if err != nil {
 		return nil, &ErrorEx{
 			ErrorMsg: err,
-			Func:     "auth.userRepository.Select.DB.PreparexContext",
+			Func:     "auth.userRepository.SelectWithUsername() --> DB.PreparexContext",
 		}
 	}
 
@@ -92,7 +129,7 @@ func (r *userRepository) Select(ctx context.Context, username string) (*User, er
 		}
 		return nil, &ErrorEx{
 			ErrorMsg: err,
-			Func:     "auth.userRepository.Select() --> DB.GetContext",
+			Func:     "auth.userRepository.SelectWithUsername() --> DB.GetContext",
 		}
 	}
 
@@ -126,13 +163,13 @@ func (r *userRepository) Create(ctx context.Context, data *User) (int64, error) 
 	}
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(data.Password.String), 4)
-	data.Password.String = hashedPassword
+	data.Password.String = string(hashedPassword)
 
 	result, err := stmt.ExecContext(
 		ctx,
 		time.Now().Format("2006-01-02 15:04:05"),
 		data.Username,
-		hashedPassword,
+		string(hashedPassword),
 	)
 
 	if err != nil {
@@ -215,12 +252,12 @@ func (r *userRepository) UpdatePassword(ctx context.Context, data *User) error {
 	}
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(data.Password.String), 4)
-	data.Password.String = hashedPassword
+	data.Password.String = string(hashedPassword)
 
 	_, err = stmt.ExecContext(
 		ctx,
 		time.Now().Format("2006-01-02 15:04:05"),
-		hashedPassword,
+		string(hashedPassword),
 		data.ID,
 	)
 
@@ -278,7 +315,7 @@ func (r *userRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *userRepository) List(ctx context.Context, start int, count int) (*[]User, error) {
+func (r *userRepository) List(ctx context.Context, start int, count int) ([]User, error) {
 	data := []User{}
 
 	stmt, err := r.db.PreparexContext(
@@ -316,5 +353,5 @@ func (r *userRepository) List(ctx context.Context, start int, count int) (*[]Use
 		}
 	}
 
-	return &data, nil
+	return data, nil
 }
