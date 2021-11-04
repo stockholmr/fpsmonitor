@@ -17,11 +17,34 @@ func editorPage() *template.Template {
 			</head>
 
 			<body>
-
-			<<range .Computers>>
-   				<< .Name.String >>
-			<<end>>
-
+				<div class="container">
+					<table class="table table-dark">
+						<thead>
+							<tr>
+								<th scope="col">#</th>
+								<th scope="col">Date</th>
+								<th scope="col">ComputerName</th>
+								<th scope="col">Username</th>
+							</tr>
+						</thead>
+						<tbody>
+							<<range .Records>>
+								<tr>
+									<td></td>
+									<td>
+										<< .Created.String >>
+									</td>
+									<td>
+										<< .ComputerName.String >>
+									</td>
+									<td>
+										<< .Username.String >>
+									</td>
+								</tr>
+							<<end>>
+						</tbody>
+					</table>
+				</div>
 			</body>
 		</html>
 	`))

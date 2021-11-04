@@ -87,37 +87,16 @@ func Index(db *sqlx.DB) http.HandlerFunc {
 
 		}
 
-		user, err := userRepo.SelectWithUsernameAndComputerID(ctx, int(compID), record.Username.String)
+		// Create new user record
+		_, err = userRepo.Create(ctx, &User{
+			Username:   record.Username,
+			ComputerID: null.IntFrom(compID),
+		})
+
 		if err != nil {
 			logging.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
-		}
-
-		if user != nil {
-
-			// User record exists
-			err = userRepo.Update(ctx, user)
-			if err != nil {
-				logging.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-		} else {
-
-			// Create new user record
-			_, err = userRepo.Create(ctx, &User{
-				Username:   record.Username,
-				ComputerID: null.IntFrom(compID),
-			})
-
-			if err != nil {
-				logging.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
 		}
 
 		networkAdapters, err := networkAdapterRepo.SelectWithComputerID(ctx, int(compID))
@@ -164,20 +143,21 @@ func Index(db *sqlx.DB) http.HandlerFunc {
 func List(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		computerRepo := NewComputerRepository(db)
-		compList, err := computerRepo.List(r.Context(), 0, 20)
+		userRepo := NewUserRepository(db)
+		list, err := userRepo.ListWithComputerNames(r.Context(), 0, 20)
 		if err != nil {
 			logging.Error(err)
+			logging.Trace(err.(*ErrorEx).Func)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		data := struct {
-			Title     string
-			Computers []Computer
+			Title   string
+			Records []User
 		}{
-			Title:     "Computer List",
-			Computers: compList,
+			Title:   "Computer List",
+			Records: list,
 		}
 
 		editorPage().ExecuteTemplate(w, "page", &data)

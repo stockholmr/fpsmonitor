@@ -134,8 +134,8 @@ func main() {
 
 	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
 
+	router.Handle("/computers", alice.New(LoggingMiddleware).ThenFunc(computer.List(db))).Methods("GET", "POST")
 	router.Handle("/computers/stylesheet", computer.Stylesheet()).Methods("GET")
-	router.Handle("/computers/admin", alice.New(LoggingMiddleware).ThenFunc(computer.List(db))).Methods("GET", "POST")
 
 	// = Init HTTP Server =========================================================================
 

@@ -10,12 +10,13 @@ import (
 )
 
 type User struct {
-	ID         null.Int    `db:"id" json:"id"`
-	Created    null.String `db:"created" json:"created"`
-	Updated    null.String `db:"updated" json:"updated"`
-	Deleted    null.String `db:"deleted" json:"deleted"`
-	ComputerID null.Int    `db:"computer_id" json:"computer_id"`
-	Username   null.String `db:"username" json:"username"`
+	ID           null.Int    `db:"id" json:"id"`
+	Created      null.String `db:"created" json:"created"`
+	Updated      null.String `db:"updated" json:"updated"`
+	Deleted      null.String `db:"deleted" json:"deleted"`
+	ComputerID   null.Int    `db:"computer_id" json:"computer_id"`
+	ComputerName null.String `db:"computer_name" json:"computer_name"`
+	Username     null.String `db:"username" json:"username"`
 }
 
 type UserRepository interface {
@@ -25,6 +26,7 @@ type UserRepository interface {
 	Update(context.Context, *User) error
 	Delete(context.Context, int) error
 	List(context.Context, int, int) ([]User, error)
+	ListWithComputerNames(context.Context, int, int) ([]User, error)
 
 	SelectWithUsername(context.Context, string) (*User, error)
 	SelectWithUsernameAndComputerID(context.Context, int, string) (*User, error)
@@ -307,6 +309,48 @@ func (r *userRepository) List(ctx context.Context, start int, count int) ([]User
 			return nil, nil
 		}
 		return nil, err
+	}
+
+	return data, nil
+}
+
+func (r *userRepository) ListWithComputerNames(ctx context.Context, start int, count int) ([]User, error) {
+	data := []User{}
+
+	stmt, err := r.db.PreparexContext(
+		ctx,
+		`SELECT
+            cu.created,
+			cu.computer_id,
+            cu.username,
+			c.name AS computer_name
+        FROM computer_users cu
+		LEFT JOIN computers c ON cu.computer_id = c.id
+        LIMIT ? OFFSET ?`,
+	)
+
+	if err != nil {
+		return nil, &ErrorEx{
+			ErrorMsg: err,
+			Func:     "computer.userRepository.ListWithComputerNames.DB.PreparexContext",
+		}
+	}
+
+	err = stmt.SelectContext(
+		ctx,
+		&data,
+		count,
+		start,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, &ErrorEx{
+			ErrorMsg: err,
+			Func:     "computer.userRepository.ListWithComputerNames.DB.SelectContext",
+		}
 	}
 
 	return data, nil
