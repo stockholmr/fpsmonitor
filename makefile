@@ -11,24 +11,32 @@ SERVER_BINARY_UNIX=$(SERVER_BINARY_NAME)_unix
 CLIENT_BINARY_NAME=fpsmonitor_client
 CLIENT_BINARY_UNIX=$(CLIENT_BINARY_NAME)_unix
 
-all: build
+.PHONY: build-server build-client
 
-build: 
-		mkdir ./build
-		CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GOBUILD) -o ./build/$(SERVER_BINARY_NAME) -v ./cmd/server
-test: 
-		$(GOTEST) -v ./...
-clean: 
-		$(GOCLEAN)
-		rm -R -f ./build
+all: build-server build-client
 
-run:
-		mkdir ./build
-		$(GOBUILD) -o ./build/$(SERVER_BINARY_NAME) -v ./cmd/server
-		./build/$(SERVER_BINARY_NAME)
+mkdir:
+	mkdir -p ./build
+
+build-server: mkdir
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GOBUILD) -o ./build/$(SERVER_BINARY_NAME) -v ./cmd/server
+
+build-client: mkdir
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GOBUILD) -o ./build/$(CLIENT_BINARY_NAME) -v ./cmd/client
+
+test:
+	$(GOTEST) -v ./...
+
+clean:
+	$(GOCLEAN)
+	rm -f ./build/$(SERVER_BINARY_NAME)
+	rm -f ./build/$(CLIENT_BINARY_NAME)
+
+run-server: build-server
+	cd ./build && ./$(SERVER_BINARY_NAME)
+
+run-client: build-client
+	cd ./build && ./$(CLIENT_BINARY_NAME)
+
 tidy:
-		$(GOMOD) tidy
-
-# Cross compilation
-build-windows:
-		 $(GOBUILD) -o $(BINARY_UNIX) -v
+	$(GOMOD) tidy
