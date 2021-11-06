@@ -84,7 +84,7 @@ func main() {
 		Timeout: time.Second * 10,
 	}
 
-	_, err = client.Post("http://127.0.0.1:8080", "application/json", bytes.NewBuffer(jsonStr))
+	_, err = client.Post("http://127.0.0.1:8080/computers/update", "application/json", bytes.NewBuffer(jsonStr))
 	if err != nil {
 		log.Fatal(err)
 	}

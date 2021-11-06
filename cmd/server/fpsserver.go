@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fpsmonitor/internal/assets"
+	"fpsmonitor/internal/auth"
 	"fpsmonitor/internal/computer"
 	"fpsmonitor/internal/logging"
 	"net/http"
@@ -12,16 +13,26 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
-	"github.com/justinas/alice"
 	_ "github.com/mattn/go-sqlite3"
 	ini "gopkg.in/ini.v1"
 )
+
+/*
+func (c *authController) LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c.log.Trace("%s|%s|%s", r.Method, r.RequestURI, r.RemoteAddr)
+		next.ServeHTTP(w, r)
+	})
+}
+*/
 
 var (
 	Server = struct {
 		ListenAddress string `ini:"Listen"`
 		Port          string `ini:"Port"`
+		SessionKey    string `ini:"SessionKey"`
 	}{
 		ListenAddress: "",
 		Port:          "8080",
@@ -46,13 +57,6 @@ var (
 	db         *sqlx.DB
 	cfg        *ini.File
 )
-
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logging.Tracef("%s|%s|%s", r.Method, r.RequestURI, r.RemoteAddr)
-		next.ServeHTTP(w, r)
-	})
-}
 
 func main() {
 
@@ -81,7 +85,8 @@ func main() {
 
 	// = Init Logger =========================================================================
 
-	if err := logging.Init(Logging.File, logging.TRACE, logging.DEBUG); err != nil {
+	logger, err := logging.NewLogger(Logging.File, logging.TRACE, logging.DEBUG)
+	if err != nil {
 		logging.Debug(err)
 	}
 
@@ -108,7 +113,15 @@ func main() {
 
 	dbCtx := context.Background()
 
+	if err = auth.NewUserRepository(db).Install(); err != nil {
+		logging.Fatalf("database failed: %s", err)
+	}
+
 	if Database.Install {
+		if err = auth.NewUserRepository(db).Install(); err != nil {
+			logging.Fatalf("database failed: %s", err)
+		}
+
 		if err = computer.NewComputerRepository(db).Install(dbCtx); err != nil {
 			logging.Fatalf("database failed: %s", err)
 		}
@@ -124,6 +137,10 @@ func main() {
 
 	defer db.Close()
 
+	// = Init Session Store ======================================================================
+
+	sessionStore := sessions.NewCookieStore([]byte(Server.SessionKey))
+
 	// = Init Mux Router =========================================================================
 
 	router = mux.NewRouter().StrictSlash(true)
@@ -132,10 +149,13 @@ func main() {
 	router.Handle("/jquery", assets.Jquery()).Methods("GET")
 	router.Handle("/axios", assets.Axios()).Methods("GET")
 
-	router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
+	_ = auth.NewAuthController(db, logger, router, sessionStore, "list")
+	_ = computer.NewComputerController(db, logger, router)
 
-	router.Handle("/computers", alice.New(LoggingMiddleware).ThenFunc(computer.List(db))).Methods("GET", "POST")
-	router.Handle("/computers/stylesheet", computer.Stylesheet()).Methods("GET")
+	//router.Handle("/", alice.New(LoggingMiddleware).ThenFunc(computer.Index(db))).Methods("POST")
+
+	//router.Handle("/computers", alice.New(LoggingMiddleware).ThenFunc(computer.List(db))).Methods("GET", "POST")
+	//router.Handle("/computers/stylesheet", computer.Stylesheet()).Methods("GET")
 
 	// = Init HTTP Server =========================================================================
 

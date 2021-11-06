@@ -9,13 +9,14 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/justinas/alice v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.9
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	gopkg.in/guregu/null.v3 v3.5.0
 	gopkg.in/ini.v1 v1.63.2
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/lib/pq v1.10.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 )
 

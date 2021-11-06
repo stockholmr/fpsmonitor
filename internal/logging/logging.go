@@ -19,13 +19,13 @@ const (
 	FATAL
 )
 
-func Init(logFile string, consoleLogLevel int, fileLogLevel int) error {
+func NewLogger(logFile string, consoleLogLevel int, fileLogLevel int) (*lumber.MultiLogger, error) {
 
 	logDir := path.Dir(logFile)
 	err := os.Mkdir(logDir, 0776)
 	if err != nil {
 		if !os.IsExist(err) {
-			return err
+			return nil, err
 		}
 	}
 
@@ -40,14 +40,14 @@ func Init(logFile string, consoleLogLevel int, fileLogLevel int) error {
 		100,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger = lumber.NewMultiLogger()
 	logger.AddLoggers(consoleLogger)
 	logger.AddLoggers(fileLogger)
 
-	return nil
+	return logger, nil
 }
 
 func Error(msg interface{}) {
