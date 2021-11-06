@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
-	"fpsmonitor/internal/assets"
-	"fpsmonitor/internal/auth"
-	"fpsmonitor/internal/computer"
-	"fpsmonitor/internal/logging"
 	"net/http"
 	"os"
 	"os/signal"
 	"path"
 	"time"
+
+	"github.com/stockholmr/auth"
+	"github.com/stockholmr/fpsmonitor/internal/assets"
+	"github.com/stockholmr/fpsmonitor/internal/computer"
+	"github.com/stockholmr/fpsmonitor/internal/logging"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
