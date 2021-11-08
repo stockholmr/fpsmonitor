@@ -10,6 +10,7 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/stockholmr/auth v0.0.0-20211106110001-ea25f118f1a0
+	github.com/stockholmr/lumber v0.0.0-20211106165735-c0143c5fd0f1
 	gopkg.in/guregu/null.v3 v3.5.0
 	gopkg.in/ini.v1 v1.63.2
 )

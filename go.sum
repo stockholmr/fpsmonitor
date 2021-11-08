@@ -152,6 +152,8 @@ github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnIn
 github.com/spf13/viper v1.4.0/go.mod h1:PTJ7Z/lr49W6bUbkmS1V3by4uWynFiR9p7+dSq/yZzE=
 github.com/stockholmr/auth v0.0.0-20211106110001-ea25f118f1a0 h1:zHtgpOLDhz2AFYXfucU/dl/JkETRzPKwO3Xec0ZtGjk=
 github.com/stockholmr/auth v0.0.0-20211106110001-ea25f118f1a0/go.mod h1:H0B7vs+rqmCiTS+7IoKjcN6MjLg4Ex1Afis93cGDRAI=
+github.com/stockholmr/lumber v0.0.0-20211106165735-c0143c5fd0f1 h1:y1/4lHeCXPxyw0Z3mpkuNPCYYu6FqHAsiPwwBZlyBi0=
+github.com/stockholmr/lumber v0.0.0-20211106165735-c0143c5fd0f1/go.mod h1:363x/AwhrCFEUbcvDf8gKkR1YgMrU05ZCg9yuGyAE1o=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=

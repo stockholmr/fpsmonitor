@@ -11,7 +11,8 @@ import (
 	"github.com/stockholmr/auth"
 	"github.com/stockholmr/fpsmonitor/internal/assets"
 	"github.com/stockholmr/fpsmonitor/internal/computer"
-	"github.com/stockholmr/fpsmonitor/internal/logging"
+
+	logging "github.com/stockholmr/lumber"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -86,10 +87,26 @@ func main() {
 
 	// = Init Logger =========================================================================
 
-	logger, err := logging.NewLogger(Logging.File, logging.TRACE, logging.DEBUG)
+	dir := path.Dir(Logging.File)
+	err = os.Mkdir(dir, 0776)
 	if err != nil {
-		logging.Debug(err)
+		if !os.IsExist(err) {
+			logging.Error(err)
+		}
 	}
+
+	consoleLogger := logging.NewConsoleLogger(logging.TRACE)
+	fileLogger, err := logging.NewFileLogger(Logging.File, logging.TRACE, logging.ROTATE, 5000, 5, 100)
+	if err != nil {
+		logging.Error(err)
+	}
+
+	logger := logging.NewNamedMultiLogger()
+	logger.AddLoggers(
+		logging.NamedLogger{Name: "console", Logger: consoleLogger},
+		logging.NamedLogger{Name: "file", Logger: fileLogger},
+	)
+	defer logger.Close()
 
 	// = Init Datebase Connection =========================================================================
 
