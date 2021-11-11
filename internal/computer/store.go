@@ -196,8 +196,8 @@ type NetworkAdapterInterface interface {
 	HardDelete(ctx context.Context, m *NetworkAdapterModel) error
 }
 
-func NewNetworkAdapterStore(db *sqlx.DB) ComputerStoreInterface {
-	return &computerStore{
+func NewNetworkAdapterStore(db *sqlx.DB) NetworkAdapterInterface {
+	return &networkAdapterStore{
 		db: db,
 	}
 }
@@ -262,4 +262,42 @@ func (s *networkAdapterStore) Update(ctx context.Context, m *NetworkAdapterModel
 	}
 
 	return nil
+}
+
+func (s *networkAdapterStore) GetAllByComputerID(ctx context.Context, id int) ([]NetworkAdapterModel, error) {
+	model := make([]NetworkAdapterModel, 0)
+
+	stmt, err := s.db.PreparexContext(
+		ctx,
+		`SELECT 
+			id,
+			created,
+			updated,
+			deleted,
+			computer_id,
+			name,
+			mac_address,
+			ip_address
+		FROM computer_network_adapters
+		WHERE computer_id=?`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = stmt.GetContext(
+		ctx,
+		&model,
+		id,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return model, nil
 }
