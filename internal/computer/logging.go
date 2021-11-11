@@ -1,1 +1,5 @@
 package computer
+
+func log() {
+
+}

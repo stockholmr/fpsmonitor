@@ -1,25 +1,30 @@
 package main
 
 import (
-	"context"
-	"net/http"
-	"os"
-	"os/signal"
-	"path"
-	"time"
-
-	"github.com/stockholmr/auth"
-	"github.com/stockholmr/fpsmonitor/internal/assets"
-	"github.com/stockholmr/fpsmonitor/internal/computer"
-
-	logging "github.com/stockholmr/lumber"
+	"log"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	ini "gopkg.in/ini.v1"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
+
+func Route(path string, controller interface{}, router *mux.Router) {
+	
+}
+
+func main() {
+
+	// = Init Datebase Connection =========================================================================
+
+	db, err := gorm.Open(sqlite.Open("fpsmonitor.sqlite"), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db.AutoMigrate(&Computer{}, &NetworkAdapter{}, &User{})
+
+}
 
 /*
 func (c *authController) LoggingMiddleware(next http.Handler) http.Handler {
@@ -30,7 +35,7 @@ func (c *authController) LoggingMiddleware(next http.Handler) http.Handler {
 }
 */
 
-var (
+/*var (
 	Server = struct {
 		ListenAddress string `ini:"Listen"`
 		Port          string `ini:"Port"`
@@ -108,52 +113,7 @@ func main() {
 	)
 	defer logger.Close()
 
-	// = Init Datebase Connection =========================================================================
 
-	dbDir := path.Dir(Database.File)
-	err = os.Mkdir(dbDir, 0776)
-	if err != nil {
-		if !os.IsExist(err) {
-			logging.Fatalf("database failed: %s", err)
-		}
-	}
-
-	if _, err := os.Stat(Database.File); err != nil {
-		if !os.IsExist(err) {
-			Database.Install = true
-		}
-	}
-
-	db, err = sqlx.Open("sqlite3", Database.File)
-	if err != nil {
-		logging.Fatalf("database failed: %s", err)
-	}
-
-	dbCtx := context.Background()
-
-	if err = auth.NewUserRepository(db).Install(); err != nil {
-		logging.Fatalf("database failed: %s", err)
-	}
-
-	if Database.Install {
-		if err = auth.NewUserRepository(db).Install(); err != nil {
-			logging.Fatalf("database failed: %s", err)
-		}
-
-		if err = computer.NewComputerRepository(db).Install(dbCtx); err != nil {
-			logging.Fatalf("database failed: %s", err)
-		}
-
-		if err = computer.NewNetworkAdapterRepository(db).Install(dbCtx); err != nil {
-			logging.Fatalf("database failed: %s", err)
-		}
-
-		if err = computer.NewUserRepository(db).Install(dbCtx); err != nil {
-			logging.Fatalf("database failed: %s", err)
-		}
-	}
-
-	defer db.Close()
 
 	// = Init Session Store ======================================================================
 
@@ -204,3 +164,4 @@ func main() {
 	logging.Info("server shutdown")
 	os.Exit(0)
 }
+*/
