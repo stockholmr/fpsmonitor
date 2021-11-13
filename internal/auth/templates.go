@@ -18,7 +18,7 @@ func InitTemplates() *Templates {
 	return &Templates{
 		LeftDelim:  "<<",
 		RightDelim: ">>",
-		Data:       make(TemplateData, 0),
+		Data:       make(TemplateData),
 	}
 }
 
@@ -27,7 +27,7 @@ func (t *Templates) SetData(key string, value interface{}) {
 }
 
 func (t *Templates) mergeData(data ...TemplateData) TemplateData {
-	newData := make(TemplateData, 0)
+	newData := make(TemplateData)
 
 	for i := range data {
 		for k, v := range data[i] {

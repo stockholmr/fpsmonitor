@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+type ContextKey uint
+
+const UserKey ContextKey = iota
+
 func (c *controller) AuthenticateSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -16,7 +20,7 @@ func (c *controller) AuthenticateSession(next http.Handler) http.Handler {
 		}
 
 		if userID.Valid {
-			request := r.Clone(context.WithValue(r.Context(), "user_id", userID.Int64))
+			request := r.Clone(context.WithValue(r.Context(), UserKey, userID.Int64))
 			next.ServeHTTP(w, request)
 			return
 		}

@@ -14,7 +14,7 @@ func (c *controller) ToInteger(v interface{}) null.Int {
 		return null.Int{}
 	}
 
-	if "string" == reflect.TypeOf(v).Name() {
+	if reflect.TypeOf(v).Name() == "string" {
 		integer, err := strconv.Atoi(v.(string))
 		if err != nil {
 			return null.Int{}
@@ -22,7 +22,7 @@ func (c *controller) ToInteger(v interface{}) null.Int {
 		return null.IntFrom(int64(integer))
 	}
 
-	if "int" == reflect.TypeOf(v).Name() {
+	if reflect.TypeOf(v).Name() == "int" {
 		integer, ok := v.(int)
 		if !ok {
 			return null.Int{}
