@@ -15,7 +15,9 @@ require (
 )
 
 require (
+	github.com/gorilla/csrf v1.7.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.2 // indirect
 	github.com/lib/pq v1.10.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 )

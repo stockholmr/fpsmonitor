@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -56,7 +57,17 @@ func InitWithLogger(r *mux.Router, db *sqlx.DB, logger *log.Logger) Controller {
 	return c
 }
 
-func (c *controller) register(r *mux.Router) {
+func (c *controller) register(router *mux.Router) {
+
+	csrfMiddleware := csrf.Protect(
+		securecookie.GenerateRandomKey(32),
+		csrf.RequestHeader("Authenticity-Token"),
+		csrf.FieldName("authenticity_token"),
+		csrf.ErrorHandler(http.HandlerFunc(c.Forbidden)),
+	)
+
+	r := router.PathPrefix("/user").Subrouter()
+	r.Use(csrfMiddleware)
 
 	r.HandleFunc("/login", c.Login).Methods("GET", "POST").Name("login")
 	r.HandleFunc("/logout", c.Logout).Methods("GET").Name("logout")
@@ -153,4 +164,8 @@ func (c *controller) Register(w http.ResponseWriter, r *http.Request) {
 	c.templates.Register(w, TemplateData{
 		"Title": "Register",
 	})
+}
+
+func (c *controller) Forbidden(w http.ResponseWriter, r *http.Request) {
+
 }
