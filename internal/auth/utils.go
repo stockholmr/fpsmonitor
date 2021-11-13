@@ -9,7 +9,7 @@ import (
 	"gopkg.in/guregu/null.v3"
 )
 
-func (c *controller) toInteger(v interface{}) null.Int {
+func (c *controller) ToInteger(v interface{}) null.Int {
 	if v == nil {
 		return null.Int{}
 	}
@@ -38,7 +38,7 @@ func (c *controller) Redirect(w http.ResponseWriter, r *http.Request, url string
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
-func (c *controller) validateSession(r *http.Request) (null.Int, *sessions.Session, error) {
+func (c *controller) ValidateSession(r *http.Request) (null.Int, *sessions.Session, error) {
 	// retrieve session from store
 	session, err := c.sessionStore.Get(r, "AUTH_SESSION")
 	if err != nil {
@@ -48,7 +48,7 @@ func (c *controller) validateSession(r *http.Request) (null.Int, *sessions.Sessi
 	userStore := NewUserStore(c.db)
 
 	// convert session value into integer
-	userID := c.toInteger(session.Values["userid"])
+	userID := c.ToInteger(session.Values["userid"])
 
 	if !userID.Valid {
 

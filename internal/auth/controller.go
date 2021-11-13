@@ -66,7 +66,7 @@ func (c *controller) register(r *mux.Router) {
 
 func (c *controller) Login(w http.ResponseWriter, r *http.Request) {
 
-	userID, session, err := c.validateSession(r)
+	userID, session, err := c.ValidateSession(r)
 	if err != nil {
 		c.Error(err)
 		http.Error(w, "", http.StatusInternalServerError)

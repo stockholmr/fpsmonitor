@@ -8,7 +8,7 @@ import (
 func (c *controller) AuthenticateSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		userID, _, err := c.validateSession(r)
+		userID, _, err := c.ValidateSession(r)
 		if err != nil {
 			c.Error(err)
 			http.Error(w, "", http.StatusInternalServerError)
