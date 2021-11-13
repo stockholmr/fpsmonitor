@@ -120,7 +120,7 @@ func (s *computerStore) GetAll(ctx context.Context, start int, count int) ([]Com
 		return nil, err
 	}
 
-	err = stmt.GetContext(
+	err = stmt.SelectContext(
 		ctx,
 		&model,
 		count,
@@ -188,15 +188,15 @@ type networkAdapterStore struct {
 	db *sqlx.DB
 }
 
-type NetworkAdapterInterface interface {
+type NetworkAdapterStoreInterface interface {
 	Create(ctx context.Context, m *NetworkAdapterModel) (null.Int, error)
-	UpdateIPAddress(ctx context.Context, m *NetworkAdapterModel) error
+	Update(ctx context.Context, m *NetworkAdapterModel) error
 	GetAllByComputerID(ctx context.Context, id int) ([]NetworkAdapterModel, error)
 	SoftDelete(ctx context.Context, m *NetworkAdapterModel) error
 	HardDelete(ctx context.Context, m *NetworkAdapterModel) error
 }
 
-func NewNetworkAdapterStore(db *sqlx.DB) NetworkAdapterInterface {
+func NewNetworkAdapterStore(db *sqlx.DB) NetworkAdapterStoreInterface {
 	return &networkAdapterStore{
 		db: db,
 	}
@@ -286,7 +286,7 @@ func (s *networkAdapterStore) GetAllByComputerID(ctx context.Context, id int) ([
 		return nil, err
 	}
 
-	err = stmt.GetContext(
+	err = stmt.SelectContext(
 		ctx,
 		&model,
 		id,
@@ -300,4 +300,199 @@ func (s *networkAdapterStore) GetAllByComputerID(ctx context.Context, id int) ([
 	}
 
 	return model, nil
+}
+
+func (s *networkAdapterStore) SoftDelete(ctx context.Context, m *NetworkAdapterModel) error {
+	stmt, err := s.db.PreparexContext(
+		ctx,
+		`UPDATE computer_network_adapters SET
+			deleted=?
+        WHERE id=?`,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(
+		ctx,
+		time.Now().Format("2006-01-02 15:04:05"),
+		m.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *networkAdapterStore) HardDelete(ctx context.Context, m *NetworkAdapterModel) error {
+	stmt, err := s.db.PreparexContext(
+		ctx,
+		`DELETE FROM computer_network_adapters WHERE id=?`,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(
+		ctx,
+		m.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type userStore struct {
+	db *sqlx.DB
+}
+
+type UserStoreInterface interface {
+	Create(ctx context.Context, m *UserModel) (null.Int, error)
+	UpdateLastActivityAt(ctx context.Context, m *UserModel) error
+	GetAllUsersByComputerName(ctx context.Context, id string) ([]UserModel, error)
+	SoftDelete(ctx context.Context, m *UserModel) error
+	HardDelete(ctx context.Context, m *UserModel) error
+}
+
+func NewUserStore(db *sqlx.DB) UserStoreInterface {
+	return &userStore{
+		db: db,
+	}
+}
+
+func (s *userStore) Create(ctx context.Context, m *UserModel) (null.Int, error) {
+	stmt, err := s.db.PrepareContext(
+		ctx,
+		`INSERT INTO computer_users (
+            created,
+            computer_id,
+            username
+        ) VALUES (?,?,?)`,
+	)
+
+	if err != nil {
+		return null.Int{}, err
+	}
+
+	result, err := stmt.ExecContext(
+		ctx,
+		time.Now().Format("2006-01-02 15:04:05"),
+		m.ComputerID,
+		m.Username,
+	)
+
+	if err != nil {
+		return null.Int{}, err
+	}
+
+	id, _ := result.LastInsertId()
+	return null.IntFrom(id), nil
+}
+
+func (s *userStore) UpdateLastActivityAt(ctx context.Context, m *UserModel) error {
+	stmt, err := s.db.PrepareContext(
+		ctx,
+		`UPDATE computer_users SET
+			updated=?,
+		WHERE id=?`,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(
+		ctx,
+		time.Now().Format("2006-01-02 15:04:05"),
+		m.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *userStore) GetAllUsersByComputerName(ctx context.Context, id string) ([]UserModel, error) {
+	model := make([]UserModel, 0)
+
+	stmt, err := s.db.PreparexContext(
+		ctx,
+		`SELECT * FROM computer_users 
+			WHERE computer_id=(SELECT id FROM computers WHERE name=?)`,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = stmt.SelectContext(
+		ctx,
+		&model,
+		id,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return model, nil
+}
+
+func (s *userStore) SoftDelete(ctx context.Context, m *UserModel) error {
+	stmt, err := s.db.PreparexContext(
+		ctx,
+		`UPDATE computer_users SET
+			deleted=?
+        WHERE id=?`,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(
+		ctx,
+		time.Now().Format("2006-01-02 15:04:05"),
+		m.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *userStore) HardDelete(ctx context.Context, m *UserModel) error {
+	stmt, err := s.db.PreparexContext(
+		ctx,
+		`DELETE FROM computer_users WHERE id=?`,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(
+		ctx,
+		m.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
