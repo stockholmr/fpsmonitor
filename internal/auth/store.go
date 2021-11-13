@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/guregu/null.v3"
 )
 
@@ -16,6 +17,7 @@ type userStore struct {
 type UserStoreInterface interface {
 	Create(ctx context.Context, m *UserModel) (null.Int, error)
 	UpdateLastActivityAt(ctx context.Context, m *UserModel) error
+	UpdatePassword(ctx context.Context, m *UserModel) error
 	Get(ctx context.Context, id null.Int) (*UserModel, error)
 	GetByUsername(ctx context.Context, id string) (*UserModel, error)
 	SoftDelete(ctx context.Context, m *UserModel) error
@@ -31,10 +33,10 @@ func NewUserStore(db *sqlx.DB) UserStoreInterface {
 func (s *userStore) Create(ctx context.Context, m *UserModel) (null.Int, error) {
 	stmt, err := s.db.PrepareContext(
 		ctx,
-		`INSERT INTO computer_users (
+		`INSERT INTO users (
             created,
-            computer_id,
-            username
+            username,
+            password
         ) VALUES (?,?,?)`,
 	)
 
@@ -42,11 +44,13 @@ func (s *userStore) Create(ctx context.Context, m *UserModel) (null.Int, error) 
 		return null.Int{}, err
 	}
 
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(m.Password.String), 4)
+
 	result, err := stmt.ExecContext(
 		ctx,
 		time.Now().Format("2006-01-02 15:04:05"),
-		m.ID,
 		m.Username,
+		string(hashedPassword),
 	)
 
 	if err != nil {
@@ -72,6 +76,33 @@ func (s *userStore) UpdateLastActivityAt(ctx context.Context, m *UserModel) erro
 	_, err = stmt.ExecContext(
 		ctx,
 		time.Now().Format("2006-01-02 15:04:05"),
+		m.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *userStore) UpdatePassword(ctx context.Context, m *UserModel) error {
+	stmt, err := s.db.PrepareContext(
+		ctx,
+		`UPDATE users SET
+			password=?
+		WHERE id=?`,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(m.Password.String), 4)
+
+	_, err = stmt.ExecContext(
+		ctx,
+		hashedPassword,
 		m.ID,
 	)
 
@@ -143,7 +174,7 @@ func (s *userStore) GetByUsername(ctx context.Context, id string) (*UserModel, e
 func (s *userStore) SoftDelete(ctx context.Context, m *UserModel) error {
 	stmt, err := s.db.PreparexContext(
 		ctx,
-		`UPDATE computer_users SET
+		`UPDATE users SET
 			deleted=?
         WHERE id=?`,
 	)
@@ -168,7 +199,7 @@ func (s *userStore) SoftDelete(ctx context.Context, m *UserModel) error {
 func (s *userStore) HardDelete(ctx context.Context, m *UserModel) error {
 	stmt, err := s.db.PreparexContext(
 		ctx,
-		`DELETE FROM computer_users WHERE id=?`,
+		`DELETE FROM users WHERE id=?`,
 	)
 
 	if err != nil {
