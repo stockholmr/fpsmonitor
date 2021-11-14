@@ -1,4 +1,4 @@
-package container
+package app
 
 import (
 	"os"
@@ -8,36 +8,36 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func (c *container) InitDB(file string) {
+func (a *app) InitDB(file string) {
 
 	dir := path.Dir(file)
 	err := os.Mkdir(dir, 0776)
 	if err != nil {
 		if !os.IsExist(err) {
-			c.Fatal(err)
+			a.Fatal(err)
 		}
 	}
 
 	db, err := sqlx.Open("sqlite3", file)
 	if err != nil {
-		c.Fatal(err)
+		a.Fatal(err)
 	}
 
-	c.db = db
+	a.db = db
 }
 
-func (c *container) SetDB(db *sqlx.DB) {
-	c.db = db
+func (a *app) SetDB(db *sqlx.DB) {
+	a.db = db
 }
 
-func (c *container) DB() *sqlx.DB {
-	if c.db == nil {
+func (a *app) DB() *sqlx.DB {
+	if a.db == nil {
 		db, err := sqlx.Open("sqlite3", ":memory:")
 		if err != nil {
-			c.Error(err)
+			a.Error(err)
 		}
-		c.db = db
+		a.db = db
 	}
 
-	return c.db
+	return a.db
 }

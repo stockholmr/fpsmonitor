@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/base64"
@@ -27,16 +27,16 @@ type logging struct {
 	File string `ini:"File"`
 }
 
-type Config struct {
+type ConfigModel struct {
 	Server   *server
 	Session  *session
 	Database *database
 	Logging  *logging
 }
 
-func InitConfig(file string) *Config {
+func (a *app) InitConfig(file string) {
 
-	cfg := &Config{
+	cfg := &ConfigModel{
 
 		Server: &server{
 			ListenAddress: "",
@@ -83,5 +83,37 @@ func InitConfig(file string) *Config {
 	iniCfg.Section("Database").MapTo(&cfg.Database)
 	iniCfg.Section("Logging").MapTo(&cfg.Logging)
 
-	return cfg
+	a.config = cfg
+}
+
+func (a *app) SetConfig(cfg *ConfigModel) {
+	a.config = cfg
+}
+
+func (a *app) Config() *ConfigModel {
+	if a.config == nil {
+		a.config = &ConfigModel{
+
+			Server: &server{
+				ListenAddress: "",
+				Port:          "8000",
+			},
+
+			Session: &session{
+				AuthenticationKey: base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(64)),
+				EncryptionKey:     base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)),
+			},
+
+			Database: &database{
+				File:    "fpsmonitor.sqlite",
+				Install: false,
+			},
+
+			Logging: &logging{
+				File: "fpsmonitor.log",
+			},
+		}
+	}
+
+	return a.config
 }
