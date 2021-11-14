@@ -1,6 +1,10 @@
 package app
 
-import "github.com/gorilla/mux"
+import (
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
 
 func (a *app) InitRouter() {
 	a.router = mux.NewRouter().StrictSlash(true)
@@ -16,4 +20,8 @@ func (a *app) Router() *mux.Router {
 	}
 
 	return a.router
+}
+
+func (a *app) Redirect(w http.ResponseWriter, r *http.Request, url string) {
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }

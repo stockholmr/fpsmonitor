@@ -4,64 +4,41 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/jmoiron/sqlx"
+	"github.com/stockholmr/fpsmonitor/internal/app"
 	"gopkg.in/guregu/null.v3"
 )
 
 type controller struct {
-	db   *sqlx.DB
-	logg *log.Logger
+	app app.App
 }
 
 type Controller interface {
 	Update(http.ResponseWriter, *http.Request)
 }
 
-func Init(r *mux.Router, db *sqlx.DB) Controller {
-	c := &controller{
-		db:   db,
-		logg: log.Default(),
-	}
+func Init(app app.App) Controller {
+	c := &controller{app: app}
 
-	c.initLog()
-	c.register(r)
-	return c
-}
-
-func InitWithLogger(r *mux.Router, db *sqlx.DB, logger *log.Logger) Controller {
-	c := &controller{
-		db:   db,
-		logg: logger,
-	}
-
-	c.initLog()
-	c.register(r)
-	return c
-}
-
-func (c *controller) register(router *mux.Router) {
-
-	r := router.PathPrefix("/computers").Subrouter()
+	r := c.app.Router().PathPrefix("/computers").Subrouter()
 	r.HandleFunc("/update", c.Update).Methods("POST").Name("update")
 
+	return c
 }
 
 func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), (time.Second * 10))
 	defer cancel()
 
-	compStore := NewComputerStore(c.db)
-	netStore := NewNetworkAdapterStore(c.db)
-	userStore := NewUserStore(c.db)
+	compStore := NewComputerStore(c.app.DB())
+	netStore := NewNetworkAdapterStore(c.app.DB())
+	userStore := NewUserStore(c.app.DB())
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		c.Error(err)
+		c.app.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -75,7 +52,7 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(data, &record)
 	if err != nil {
-		c.Error(err)
+		c.app.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -84,7 +61,7 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 
 	comp, err := compStore.Get(ctx, record.Name.String)
 	if err != nil {
-		c.Error(err)
+		c.app.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -95,7 +72,7 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 		compID = null.IntFrom(comp.ID.Int64)
 		err := compStore.UpdateLastActivityAt(ctx, comp)
 		if err != nil {
-			c.Error(err)
+			c.app.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -108,7 +85,7 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if err != nil {
-			c.Error(err)
+			c.app.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -122,14 +99,14 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		c.Error(err)
+		c.app.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	networkAdapters, err := netStore.GetAllByComputerID(ctx, int(compID.Int64))
 	if err != nil {
-		c.Error(err)
+		c.app.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -143,7 +120,7 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 					na.Name = nar.Name
 					err = netStore.Update(ctx, &na)
 					if err != nil {
-						c.Error(err)
+						c.app.Error(err)
 						w.WriteHeader(http.StatusInternalServerError)
 						return
 					}
@@ -156,7 +133,7 @@ func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
 		for _, na := range record.Adapters {
 			na.ComputerID = compID
 			if _, err = netStore.Create(ctx, &na); err != nil {
-				c.Error(err)
+				c.app.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}

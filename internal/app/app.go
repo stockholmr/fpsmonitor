@@ -10,13 +10,13 @@ import (
 )
 
 type app struct {
-	log          *log.Logger
-	db           *sqlx.DB
-	config       *ConfigModel
-	sessionStore sessions.Store
-	sessionKeys  *SessionKeys
-	router       *mux.Router
-
+	log            *log.Logger
+	db             *sqlx.DB
+	config         *ConfigModel
+	sessionStore   sessions.Store
+	sessionKeys    *SessionKeys
+	router         *mux.Router
+	controllers    map[string]interface{}
 	csrfMiddleware func(http.Handler) http.Handler
 }
 
@@ -49,10 +49,17 @@ type App interface {
 	InitRouter()
 	SetRouter(*mux.Router)
 	Router() *mux.Router
+	Redirect(http.ResponseWriter, *http.Request, string)
 
+	InitCsrfMiddleware()
 	CsrfMiddleware(next http.Handler) http.Handler
+
+	RegisterController(string, interface{})
+	Controller(string) interface{}
 }
 
 func New() App {
-	return &app{}
+	return &app{
+		controllers: make(map[string]interface{}),
+	}
 }

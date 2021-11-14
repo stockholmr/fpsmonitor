@@ -24,13 +24,14 @@ func main() {
 		serverApp.Config().Session.AuthenticationKey,
 		serverApp.Config().Session.EncryptionKey,
 	)
+	serverApp.InitCsrfMiddleware()
 	serverApp.InitRouter()
 
 	defer serverApp.DB().Close()
 
-	authController := auth.InitWithLogger(router, db, sessionKeys, logg)
-	computer.InitWithLogger(router, db, logg)
-	admin.InitWithLogger(router, db, authController, logg)
+	serverApp.RegisterController("auth", auth.Init(serverApp))
+	serverApp.RegisterController("admin", admin.Init(serverApp))
+	serverApp.RegisterController("computer", computer.Init(serverApp))
 
 	server := http.Server{
 		Addr:           serverApp.Config().Server.ListenAddress + ":" + serverApp.Config().Server.Port,

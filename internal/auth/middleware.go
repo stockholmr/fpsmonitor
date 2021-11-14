@@ -14,7 +14,7 @@ func (c *controller) AuthenticateSession(next http.Handler) http.Handler {
 
 		userID, _, err := c.ValidateSession(r)
 		if err != nil {
-			c.Error(err)
+			c.app.Error(err)
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
@@ -25,6 +25,6 @@ func (c *controller) AuthenticateSession(next http.Handler) http.Handler {
 			return
 		}
 
-		c.Redirect(w, r, "/user/login")
+		c.app.Redirect(w, r, "/user/login")
 	})
 }
