@@ -14,7 +14,7 @@ import (
 )
 
 type controller struct {
-	db  *sqlx.DB
+	db   *sqlx.DB
 	logg *log.Logger
 }
 
@@ -24,34 +24,31 @@ type Controller interface {
 
 func Init(r *mux.Router, db *sqlx.DB) Controller {
 	c := &controller{
-		db:  db,
+		db:   db,
 		logg: log.Default(),
 	}
 
 	c.initLog()
-
-	router := r.PathPrefix("/computers").Subrouter()
-
-	router.HandleFunc("/update", c.Update).Methods("POST").Name("update")
-
-	/*r.Handle("/update", alice.New(m...).ThenFunc(c.Update)).Methods("POST").Name("update")
-	r.Handle("/list", alice.New(m...).ThenFunc(c.Update)).Methods("POST").Name("list")
-	r.Handle("/stylesheet", alice.New(m...).ThenFunc(c.Stylesheet)).Methods("GET")*/
-
+	c.register(r)
 	return c
 }
 
 func InitWithLogger(r *mux.Router, db *sqlx.DB, logger *log.Logger) Controller {
 	c := &controller{
-		db:  db,
+		db:   db,
 		logg: logger,
 	}
 
-	router := r.PathPrefix("/computers").Subrouter()
-
-	router.HandleFunc("/update", c.Update).Methods("POST").Name("update")
-
+	c.initLog()
+	c.register(r)
 	return c
+}
+
+func (c *controller) register(router *mux.Router) {
+
+	r := router.PathPrefix("/computers").Subrouter()
+	r.HandleFunc("/update", c.Update).Methods("POST").Name("update")
+
 }
 
 func (c *controller) Update(w http.ResponseWriter, r *http.Request) {
