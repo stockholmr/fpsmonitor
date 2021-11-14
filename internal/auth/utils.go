@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -8,6 +9,30 @@ import (
 	"github.com/gorilla/sessions"
 	"gopkg.in/guregu/null.v3"
 )
+
+type SessionKeys struct {
+	AuthenticationKey []byte
+	EncryptionKey     []byte
+}
+
+func SessionKeysFromBase64String(authKey string, encKey string) (*SessionKeys, error) {
+	authKeyBytes, err := base64.StdEncoding.DecodeString(authKey)
+	if err != nil {
+		return nil, err
+	}
+
+	encKeyBytes, err := base64.StdEncoding.DecodeString(encKey)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionKeys := &SessionKeys{
+		AuthenticationKey: authKeyBytes,
+		EncryptionKey:     encKeyBytes,
+	}
+
+	return sessionKeys, nil
+}
 
 func (c *controller) ToInteger(v interface{}) null.Int {
 	if v == nil {
@@ -20,6 +45,14 @@ func (c *controller) ToInteger(v interface{}) null.Int {
 			return null.Int{}
 		}
 		return null.IntFrom(int64(integer))
+	}
+
+	if reflect.TypeOf(v).Name() == "int64" {
+		integer, ok := v.(int64)
+		if !ok {
+			return null.Int{}
+		}
+		return null.IntFrom(integer)
 	}
 
 	if reflect.TypeOf(v).Name() == "int" {
@@ -38,9 +71,18 @@ func (c *controller) Redirect(w http.ResponseWriter, r *http.Request, url string
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
-func (c *controller) ValidateSession(r *http.Request) (null.Int, *sessions.Session, error) {
+func (c *controller) GetSession(r *http.Request) (*sessions.Session, error) {
 	// retrieve session from store
 	session, err := c.sessionStore.Get(r, "AUTH_SESSION")
+	if err != nil {
+		return nil, err
+	}
+	return session, nil
+}
+
+func (c *controller) ValidateSession(r *http.Request) (null.Int, *sessions.Session, error) {
+	// retrieve session from store
+	session, err := c.GetSession(r)
 	if err != nil {
 		return null.Int{}, nil, err
 	}

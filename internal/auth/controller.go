@@ -6,16 +6,17 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/guregu/null.v3"
 )
 
 type controller struct {
 	db           *sqlx.DB
 	log          *log.Logger
 	sessionStore sessions.Store
+	sessionKeys  *SessionKeys
 	templates    *Templates
 }
 
@@ -23,17 +24,19 @@ type Controller interface {
 	Login(http.ResponseWriter, *http.Request)
 	Logout(http.ResponseWriter, *http.Request)
 	Register(http.ResponseWriter, *http.Request)
+	AuthenticateSession(http.Handler) http.Handler
 }
 
-func Init(r *mux.Router, db *sqlx.DB) Controller {
+func Init(r *mux.Router, db *sqlx.DB, sessionKeys *SessionKeys) Controller {
 	c := &controller{
 		db:  db,
 		log: log.Default(),
 		sessionStore: sessions.NewCookieStore(
-			securecookie.GenerateRandomKey(64),
-			securecookie.GenerateRandomKey(32),
+			sessionKeys.AuthenticationKey,
+			sessionKeys.EncryptionKey,
 		),
-		templates: InitTemplates(),
+		sessionKeys: sessionKeys,
+		templates:   InitTemplates(),
 	}
 
 	c.initLog()
@@ -42,17 +45,18 @@ func Init(r *mux.Router, db *sqlx.DB) Controller {
 	return c
 }
 
-func InitWithLogger(r *mux.Router, db *sqlx.DB, logger *log.Logger) Controller {
+func InitWithLogger(r *mux.Router, db *sqlx.DB, sessionKeys *SessionKeys, logger *log.Logger) Controller {
 	c := &controller{
 		db:  db,
 		log: logger,
 		sessionStore: sessions.NewCookieStore(
-			securecookie.GenerateRandomKey(64),
-			securecookie.GenerateRandomKey(32),
+			sessionKeys.AuthenticationKey,
+			sessionKeys.EncryptionKey,
 		),
-		templates: InitTemplates(),
+		sessionKeys: sessionKeys,
+		templates:   InitTemplates(),
 	}
-
+	c.initLog()
 	c.register(r)
 	return c
 }
@@ -60,7 +64,7 @@ func InitWithLogger(r *mux.Router, db *sqlx.DB, logger *log.Logger) Controller {
 func (c *controller) register(router *mux.Router) {
 
 	csrfMiddleware := csrf.Protect(
-		securecookie.GenerateRandomKey(32),
+		c.sessionKeys.EncryptionKey,
 		csrf.RequestHeader("Authenticity-Token"),
 		csrf.FieldName("authenticity_token"),
 		csrf.ErrorHandler(http.HandlerFunc(c.Forbidden)),
@@ -129,11 +133,13 @@ func (c *controller) Login(w http.ResponseWriter, r *http.Request) {
 
 		userStore.UpdateLastActivityAt(r.Context(), user)
 		c.Redirect(w, r, "/admin")
-
+		return
 	}
 
 	c.templates.Login(w, TemplateData{
-		"Title": "Login",
+		"Title":     "Login",
+		"CsrfField": csrf.TemplateField(r),
+		"Flash":     session.Flashes(),
 	})
 }
 
@@ -149,7 +155,7 @@ func (c *controller) Logout(w http.ResponseWriter, r *http.Request) {
 
 	session.Options.MaxAge = -1
 	if session.Save(r, w) == nil {
-		c.Redirect(w, r, "/login")
+		c.Redirect(w, r, "/user/login")
 		return
 	} else {
 		c.Debug("failed to save session")
@@ -157,15 +163,49 @@ func (c *controller) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *controller) Register(w http.ResponseWriter, r *http.Request) {
+
+	session, err := c.GetSession(r)
+	if err != nil {
+		c.Error(err)
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+
 	if r.Method == "POST" {
-		_ = ""
+		userStore := NewUserStore(c.db)
+
+		username := r.PostFormValue("username")
+		password := r.PostFormValue("password")
+
+		newUser := UserModel{
+			Username: null.StringFrom(username),
+			Password: null.StringFrom(password),
+		}
+
+		_, err := userStore.Create(r.Context(), &newUser)
+		if err != nil {
+			c.Error(err)
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		session.AddFlash("Your account has been created.")
+		err = session.Save(r, w)
+		if err != nil {
+			c.Error(err)
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		c.Redirect(w, r, "/user/login")
+		return
 	}
 
 	c.templates.Register(w, TemplateData{
-		"Title": "Register",
+		"Title":     "Register",
+		"CsrfField": csrf.TemplateField(r),
 	})
 }
 
 func (c *controller) Forbidden(w http.ResponseWriter, r *http.Request) {
-
+	w.Write([]byte("Fucked up"))
 }

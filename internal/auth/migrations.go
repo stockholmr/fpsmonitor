@@ -6,13 +6,12 @@ func Migrate(db *sqlx.DB) error {
 	migrations := []string{
 
 		`CREATE TABLE users (
-            id INTEGER,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             created TEXT,
             updated TEXT,
             deleted TEXT,
-            username TEXT,
-            password TEXT,
-            PRIMARY KEY( id  AUTOINCREMENT)
+            username TEXT UNIQUE,
+            password TEXT
         )`,
 	}
 

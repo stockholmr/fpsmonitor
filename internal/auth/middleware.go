@@ -25,6 +25,6 @@ func (c *controller) AuthenticateSession(next http.Handler) http.Handler {
 			return
 		}
 
-		c.Redirect(w, r, "/login")
+		c.Redirect(w, r, "/user/login")
 	})
 }

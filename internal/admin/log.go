@@ -1,4 +1,4 @@
-package computer
+package admin
 
 func (c *controller) initLog() {
 

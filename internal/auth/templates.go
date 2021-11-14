@@ -68,7 +68,15 @@ func (t *Templates) page() *template.Template {
 func (t *Templates) Login(w http.ResponseWriter, data TemplateData) error {
 	tmpl, err := t.page().New("content").Delims(t.LeftDelim, t.RightDelim).Parse(`
 		<div id="login">
-			<form action="/login" method="POST">
+
+			<< range $flash := .Flash >>
+				<div class="alert alert-info" role="alert">
+					<< $flash >>
+				</div>
+			<< end >>
+
+			<form action="/user/login" method="POST">
+				<< .CsrfField >>
 
 				<< if (ne .Error "") >>
 					<div class="alert alert-danger" role="alert">
@@ -107,7 +115,8 @@ func (t *Templates) Login(w http.ResponseWriter, data TemplateData) error {
 func (t *Templates) Register(w http.ResponseWriter, data TemplateData) error {
 	tmpl, err := t.page().New("content").Delims(t.LeftDelim, t.RightDelim).Parse(`
 		<div id="register">
-			<form action="/register" method="POST">
+			<form action="/user/register" method="POST">
+				<< .CsrfField >>
 
 				<div class="form-group">
 					<label class="sr-only" for="username">Username</label>

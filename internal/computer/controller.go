@@ -15,7 +15,7 @@ import (
 
 type controller struct {
 	db  *sqlx.DB
-	log *log.Logger
+	logg *log.Logger
 }
 
 type Controller interface {
@@ -25,7 +25,7 @@ type Controller interface {
 func Init(r *mux.Router, db *sqlx.DB) Controller {
 	c := &controller{
 		db:  db,
-		log: log.Default(),
+		logg: log.Default(),
 	}
 
 	c.initLog()
@@ -44,7 +44,7 @@ func Init(r *mux.Router, db *sqlx.DB) Controller {
 func InitWithLogger(r *mux.Router, db *sqlx.DB, logger *log.Logger) Controller {
 	c := &controller{
 		db:  db,
-		log: logger,
+		logg: logger,
 	}
 
 	router := r.PathPrefix("/computers").Subrouter()
