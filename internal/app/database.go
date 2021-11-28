@@ -8,7 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func (a *app) InitDB(file string) {
+func (a *App) InitDB(file string) {
 
 	dir := path.Dir(file)
 	err := os.Mkdir(dir, 0776)
@@ -26,11 +26,11 @@ func (a *app) InitDB(file string) {
 	a.db = db
 }
 
-func (a *app) SetDB(db *sqlx.DB) {
+func (a *App) SetDB(db *sqlx.DB) {
 	a.db = db
 }
 
-func (a *app) DB() *sqlx.DB {
+func (a *App) DB() *sqlx.DB {
 	if a.db == nil {
 		db, err := sqlx.Open("sqlite3", ":memory:")
 		if err != nil {

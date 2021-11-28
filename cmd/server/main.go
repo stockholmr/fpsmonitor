@@ -1,11 +1,8 @@
 package main
 
 import (
-	"context"
-	"net/http"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/stockholmr/fpsmonitor/internal/admin"
 	"github.com/stockholmr/fpsmonitor/internal/app"
@@ -33,32 +30,11 @@ func main() {
 	serverApp.RegisterController("admin", admin.Init(serverApp))
 	serverApp.RegisterController("computer", computer.Init(serverApp))
 
-	server := http.Server{
-		Addr:           serverApp.Config().Server.ListenAddress + ":" + serverApp.Config().Server.Port,
-		Handler:        serverApp.Router(),
-		WriteTimeout:   15 * time.Second,
-		ReadTimeout:    15 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
+	serverApp.Run()
 
-	go func() {
-		serverApp.Info(
-			"[HTTP SERVER]",
-			"Address:", serverApp.Config().Server.ListenAddress,
-			"Port:", serverApp.Config().Server.Port,
-		)
-		err := server.ListenAndServe()
-		if err != nil {
-			serverApp.Error("[HTTP SERVER]", err)
-		}
-	}()
-
-	wait := time.Second * 15
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	server.Shutdown(ctx)
+	serverApp.Stop()
 	os.Exit(0)
 }

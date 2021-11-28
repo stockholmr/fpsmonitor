@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-func (a *app) InitCsrfMiddleware() {
+func (a *App) InitCsrfMiddleware() {
 	a.csrfMiddleware = csrf.Protect(
 		a.SessionKeys().EncryptionKey,
 		csrf.RequestHeader("Authenticity-Token"),
@@ -15,7 +15,7 @@ func (a *app) InitCsrfMiddleware() {
 	)
 }
 
-func (a *app) CsrfMiddleware(next http.Handler) http.Handler {
+func (a *App) CsrfMiddleware(next http.Handler) http.Handler {
 	if a.csrfMiddleware == nil {
 		a.csrfMiddleware = csrf.Protect(
 			a.SessionKeys().EncryptionKey,

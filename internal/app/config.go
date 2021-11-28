@@ -34,7 +34,7 @@ type ConfigModel struct {
 	Logging  *logging
 }
 
-func (a *app) InitConfig(file string) {
+func (a *App) InitConfig(file string) {
 
 	cfg := &ConfigModel{
 
@@ -86,11 +86,11 @@ func (a *app) InitConfig(file string) {
 	a.config = cfg
 }
 
-func (a *app) SetConfig(cfg *ConfigModel) {
+func (a *App) SetConfig(cfg *ConfigModel) {
 	a.config = cfg
 }
 
-func (a *app) Config() *ConfigModel {
+func (a *App) Config() *ConfigModel {
 	if a.config == nil {
 		a.config = &ConfigModel{
 

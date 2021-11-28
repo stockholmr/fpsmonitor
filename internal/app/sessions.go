@@ -12,7 +12,7 @@ type SessionKeys struct {
 	EncryptionKey     []byte
 }
 
-func (a *app) InitSessionKeysFromBase64(authKey string, encKey string) {
+func (a *App) InitSessionKeysFromBase64(authKey string, encKey string) {
 	authKeyBytes, err := base64.StdEncoding.DecodeString(authKey)
 	if err != nil {
 		a.Error(err)
@@ -26,22 +26,22 @@ func (a *app) InitSessionKeysFromBase64(authKey string, encKey string) {
 	a.InitSessionKeys(authKeyBytes, encKeyBytes)
 }
 
-func (a *app) InitSessionKeys(authKey []byte, encKey []byte) {
+func (a *App) InitSessionKeys(authKey []byte, encKey []byte) {
 	a.sessionKeys = &SessionKeys{
 		AuthenticationKey: authKey,
 		EncryptionKey:     encKey,
 	}
 }
 
-func (a *app) SetSessionKeys(keys *SessionKeys) {
+func (a *App) SetSessionKeys(keys *SessionKeys) {
 	a.sessionKeys = keys
 }
 
-func (a *app) SetSessionStore(store sessions.Store) {
+func (a *App) SetSessionStore(store sessions.Store) {
 	a.sessionStore = store
 }
 
-func (a *app) SessionKeys() *SessionKeys {
+func (a *App) SessionKeys() *SessionKeys {
 	if a.sessionKeys == nil {
 		a.sessionKeys = &SessionKeys{
 			AuthenticationKey: securecookie.GenerateRandomKey(64),
@@ -52,7 +52,7 @@ func (a *app) SessionKeys() *SessionKeys {
 	return a.sessionKeys
 }
 
-func (a *app) SessionStore() sessions.Store {
+func (a *App) SessionStore() sessions.Store {
 	if a.sessionStore == nil {
 		a.sessionStore = sessions.NewCookieStore(
 			a.SessionKeys().AuthenticationKey,

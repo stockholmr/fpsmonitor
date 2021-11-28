@@ -113,7 +113,7 @@ func (s *computerStore) GetAll(ctx context.Context, start int, count int) ([]Com
 
 	stmt, err := s.db.PreparexContext(
 		ctx,
-		`SELECT * FROM computers LIMIT ? OFFSET ?`,
+		`SELECT * FROM computers WHERE deleted IS NULL LIMIT ? OFFSET ?`,
 	)
 
 	if err != nil {
@@ -279,7 +279,7 @@ func (s *networkAdapterStore) GetAllByComputerID(ctx context.Context, id int) ([
 			mac_address,
 			ip_address
 		FROM computer_network_adapters
-		WHERE computer_id=?`,
+		WHERE computer_id=? AND deleted IS NULL`,
 	)
 
 	if err != nil {
@@ -427,7 +427,7 @@ func (s *userStore) GetAllUsersByComputerName(ctx context.Context, id string) ([
 	stmt, err := s.db.PreparexContext(
 		ctx,
 		`SELECT * FROM computer_users 
-			WHERE computer_id=(SELECT id FROM computers WHERE name=?)`,
+			WHERE computer_id=(SELECT id FROM computers WHERE name=?) AND deleted IS NULL`,
 	)
 
 	if err != nil {

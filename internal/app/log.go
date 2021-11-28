@@ -10,31 +10,31 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func (a *app) Fatal(v ...interface{}) {
+func (a *App) Fatal(v ...interface{}) {
 	a.Log().Fatal(append([]interface{}{"FATAL"}, v...))
 }
 
-func (a *app) Error(v ...interface{}) {
+func (a *App) Error(v ...interface{}) {
 	a.Log().Print(append([]interface{}{"ERROR"}, v...))
 }
 
-func (a *app) Warning(v ...interface{}) {
+func (a *App) Warning(v ...interface{}) {
 	a.Log().Print(append([]interface{}{"WARN"}, v...))
 }
 
-func (a *app) Info(v ...interface{}) {
+func (a *App) Info(v ...interface{}) {
 	a.Log().Print(append([]interface{}{"INFO"}, v...))
 }
 
-func (a *app) Debug(v ...interface{}) {
+func (a *App) Debug(v ...interface{}) {
 	a.Log().Print(append([]interface{}{"DEBUG"}, v...))
 }
 
-func (a *app) SetLog(log *log.Logger) {
+func (a *App) SetLog(log *log.Logger) {
 	a.log = log
 }
 
-func (a *app) InitFileLog(file string) {
+func (a *App) InitFileLog(file string) {
 
 	dir := path.Dir(file)
 	err := os.Mkdir(dir, 0776)
@@ -60,7 +60,7 @@ func (a *app) InitFileLog(file string) {
 	a.log = log.New(logRoller, prefix, 0)
 }
 
-func (a *app) Log() *log.Logger {
+func (a *App) Log() *log.Logger {
 	if a.log == nil {
 		a.log = log.Default()
 	}

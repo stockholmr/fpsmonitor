@@ -8,7 +8,9 @@ type ComputerModel struct {
 	Updated null.String `db:"updated" json:"updated"`
 	Deleted null.String `db:"deleted" json:"deleted"`
 
-	Name null.String `db:"name" json:"name"`
+	Name           null.String           `db:"name" json:"name"`
+	NetworkAdapter []NetworkAdapterModel `db:"-" json:"network_adapters"`
+	Users          []UserModel           `db:"-" json:"users"`
 }
 
 type UserModel struct {
@@ -17,7 +19,7 @@ type UserModel struct {
 	Updated null.String `db:"updated" json:"updated"`
 	Deleted null.String `db:"deleted" json:"deleted"`
 
-	ComputerID null.Int    `db:"computer_id" json:"computer_id"`
+	ComputerID null.Int    `db:"computer_id" json:"-"`
 	Username   null.String `db:"username" json:"username"`
 }
 
